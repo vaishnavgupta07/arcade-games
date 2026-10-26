@@ -41,38 +41,28 @@ cd arcade-games
 
 # Open in browser (Windows PowerShell)
 Start-Process index.html
-
-# Or open with VS Code Live Server
 ```
 
 ---
 
-## 🌐 Deploy to GitHub Pages
+## 🌐 Deploy to Vercel or GitHub Pages
 
-To host this repository on GitHub Pages for free:
+### Deploy on Vercel:
+1. Import this repository into Vercel at [vercel.com/new](https://vercel.com/new).
+2. Framework Preset: **Other**.
+3. Click **Deploy**.
 
-1. Create a new repository on GitHub named `arcade-games`.
-2. Push this folder to GitHub:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit of arcade games suite"
-   git branch -M main
-   git remote add origin https://github.com/vaishnavgupta07/arcade-games.git
-   git push -u origin main
-   ```
-3. Go to **Settings** > **Pages** in your GitHub repository.
-4. Under **Branch**, select `main` and root `/ (root)`. Click **Save**.
-5. Your arcade will be live at `https://vaishnavgupta07.github.io/arcade-games/`!
+### Deploy on GitHub Pages:
+1. Go to repository **Settings** > **Pages**.
+2. Under **Branch**, select `main` and root `/ (root)`. Click **Save**.
 
 ---
 
 ## 👨‍💻 Author
 
 **Vaishnav Gupta**
-- Portfolio: [vaishnavgupta07.github.io/vg](https://vaishnavgupta07.github.io/vg/)
+- Email: [vaishnav.py@outlook.com](mailto:vaishnav.py@outlook.com)
 - GitHub: [@vaishnavgupta07](https://github.com/vaishnavgupta07)
-- LinkedIn: [Vaishnav Gupta](https://www.linkedin.com/in/vaishnavgupta07)
 
 ---
 
