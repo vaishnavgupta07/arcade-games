@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bottle Flip Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="score-board">
+            Score: <span id="scoreVal">0</span> | Best: <span id="bestScoreTop">0</span>
+        </div>
+        <a href="../../index.html" class="exit-btn">Exit Game</a>
+    </div>
+
+    <div class="instruction" id="instructionText">
+        Hold click/touch to charge power<br>Release to FLIP!
+    </div>
+
+    <!-- Power Bar Indicator -->
+    <div id="powerBarContainer">
+        <div id="powerBarFill"></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal">
+        <h2>Bottle Fell! 💥</h2>
+        <p id="motivationalText"></p>
+        <div class="score-details">Score: <span id="finalScore">0</span></div>
+        <div class="score-details">Best Score: <span id="bestScoreDisplay">0</span></div>
+        
+        <div class="modal-btn-container">
+            <button class="modal-btn restart-btn" onclick="location.reload()">Try Again</button>
+            <a href="../../index.html" class="modal-btn exit-modal-btn">Exit</a>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Variables & Physics
+        let score = 0;
+        let bestScore = localStorage.getItem("bottleBestScore") || 0;
+        document.getElementById("bestScoreTop").innerText = bestScore;
+
+        const gravity = 0.6;
+        let state = "IDLE"; // IDLE, CHARGING, FLIPPING, GAMEOVER
+        let power = 0;
+        let maxPower = 25;
+        let powerDirection = 1;
+
+        // Table / Platform details
+        const table = {
+            y: canvas.height * 0.75, // Table screen ke 75% height par hogi
+            height: canvas.height * 0.25
+        };
+
+        // Bottle Object
+        const bottle = {
+            w: 40,
+            h: 100,
+            x: canvas.width / 2,
+            y: table.y - 100,
+            vy: 0, // Vertical velocity
+            angle: 0, // Rotation in degrees
+            vRot: 0 // Rotational velocity
+        };
+
+        const powerBarContainer = document.getElementById("powerBarContainer");
+        const powerBarFill = document.getElementById("powerBarFill");
+        const instructionText = document.getElementById("instructionText");
+
+        // Input Listeners (Mouse & Touch)
+        function startCharge(e) {
+            if (e.type === 'touchstart') e.preventDefault();
+            if (state === "IDLE") {
+                state = "CHARGING";
+                power = 0;
+                powerDirection = 1;
+                powerBarContainer.style.display = "block";
+                instructionText.style.display = "none";
+            }
+        }
+
+        function releaseFlip(e) {
+            if (e.type === 'touchend') e.preventDefault();
+            if (state === "CHARGING") {
+                state = "FLIPPING";
+                powerBarContainer.style.display = "none";
+                
+                // Jump physics apply karna
+                bottle.vy = -power; // Upar ki taraf uchhalna
+                bottle.vRot = power * 0.8; // Ghoomne ki speed (power pe depend karegi)
+            }
+        }
+
+        window.addEventListener("mousedown", startCharge);
+        window.addEventListener("touchstart", startCharge, {passive: false});
+        window.addEventListener("mouseup", releaseFlip);
+        window.addEventListener("touchend", releaseFlip, {passive: false});
+
+        // Game Loop
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Background Room (Simple gradient)
+            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, "#34495e");
+            gradient.addColorStop(1, "#2c3e50");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Table
+            ctx.fillStyle = "#8e44ad"; // Purple table for arcade look
+            ctx.fillRect(0, table.y, canvas.width, table.height);
+            ctx.fillStyle = "#9b59b6"; // Table top highlight
+            ctx.fillRect(0, table.y, canvas.width, 10);
+
+            // Charging Logic
+            if (state === "CHARGING") {
+                power += 0.5 * powerDirection;
+                if (power >= maxPower || power <= 0) {
+                    powerDirection *= -1; // Bar full hone par wapas reverse aayega
+                }
+                powerBarFill.style.width = (power / maxPower) * 100 + "%";
+            }
+
+            // Flipping Physics Logic
+            if (state === "FLIPPING") {
+                bottle.vy += gravity; // Gravity apply
+                bottle.y += bottle.vy;
+                bottle.angle += bottle.vRot; // Rotate
+
+                // Collision with table check
+                if (bottle.y >= table.y - bottle.h) {
+                    bottle.y = table.y - bottle.h; // Table par set karo
+                    checkLanding();
+                }
+            }
+
+            // Draw Bottle
+            ctx.save();
+            // Origin point ko bottle ke center me set karna taki wo center se ghoome
+            ctx.translate(bottle.x, bottle.y + bottle.h / 2);
+            ctx.rotate((bottle.angle * Math.PI) / 180);
+
+            // Draw Bottle Body
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            
+            // Bottle shape (Rectangle with rounded bottom)
+            ctx.beginPath();
+            ctx.roundRect(-bottle.w / 2, -bottle.h / 2, bottle.w, bottle.h, 5);
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw Water inside bottle (Blue)
+            ctx.fillStyle = "rgba(52, 152, 219, 0.8)";
+            ctx.beginPath();
+            ctx.roundRect(-bottle.w / 2, 0, bottle.w, bottle.h / 2, [0, 0, 5, 5]);
+            ctx.fill();
+
+            // Draw Bottle Cap
+            ctx.fillStyle = "#e74c3c"; // Red cap
+            ctx.fillRect(-bottle.w / 4, -bottle.h / 2 - 10, bottle.w / 2, 10);
+
+            ctx.restore();
+
+            if (state !== "GAMEOVER") {
+                requestAnimationFrame(update);
+            }
+        }
+
+        // Win/Loss Calculation
+        function checkLanding() {
+            // Angle ko 0-360 ke beech me lana
+            let finalAngle = Math.abs(bottle.angle % 360);
+
+            // Perfect landing condition (straight upright)
+            if (finalAngle <= 25 || finalAngle >= 335) {
+                // WIN!
+                score++;
+                document.getElementById("scoreVal").innerText = score;
+                
+                // Snap bottle back to perfect straight
+                bottle.angle = 0;
+                bottle.y = table.y - bottle.h;
+                
+                state = "IDLE";
+                instructionText.innerHTML = "Perfect! 👏<br>Tap to flip again.";
+                instructionText.style.display = "block";
+            } else {
+                // LOSE! (Bottle giri hui draw hogi)
+                state = "GAMEOVER";
+                
+                // Snap it to fallen down horizontally
+                bottle.angle = (finalAngle > 90 && finalAngle < 270) ? 180 : 90;
+                bottle.y = table.y - bottle.w/2; // Laying flat
+                drawFinalFallenState(); // Draw one last time
+                
+                setTimeout(showGameOverMenu, 500);
+            }
+        }
+
+        function drawFinalFallenState() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, "#34495e");
+            gradient.addColorStop(1, "#2c3e50");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#8e44ad"; 
+            ctx.fillRect(0, table.y, canvas.width, table.height);
+            ctx.fillStyle = "#9b59b6"; 
+            ctx.fillRect(0, table.y, canvas.width, 10);
+
+            ctx.save();
+            ctx.translate(bottle.x, table.y - bottle.w/2);
+            ctx.rotate((90 * Math.PI) / 180);
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(-bottle.w / 2, -bottle.h / 2, bottle.w, bottle.h, 5);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = "rgba(52, 152, 219, 0.8)";
+            ctx.beginPath();
+            ctx.roundRect(-bottle.w / 2, 0, bottle.w, bottle.h / 2, [0, 0, 5, 5]);
+            ctx.fill();
+
+            ctx.fillStyle = "#e74c3c";
+            ctx.fillRect(-bottle.w / 4, -bottle.h / 2 - 10, bottle.w / 2, 10);
+            ctx.restore();
+        }
+
+        function showGameOverMenu() {
+            let textElement = document.getElementById("motivationalText");
+            
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem("bottleBestScore", bestScore); 
+                textElement.innerText = "Awesome! New High Score! 🎉";
+                textElement.style.color = "#27ae60";
+            } else {
+                textElement.innerText = "Oops! Timing is everything. Your best is " + bestScore + " 💪";
+            }
+            
+            document.getElementById("finalScore").innerText = score;
+            document.getElementById("bestScoreDisplay").innerText = bestScore;
+            
+            document.getElementById("gameCanvas").style.filter = "blur(3px)";
+            document.getElementById("gameOverModal").style.display = "block";
+        }
+
+        // Adjust canvas on resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            bottle.x = canvas.width / 2;
+            table.y = canvas.height * 0.75;
+            table.height = canvas.height * 0.25;
+            if(state === "IDLE") {
+                bottle.y = table.y - bottle.h;
+            }
+        });
+
+        // Start animation
+        update();
+
+    </script>
+</body>
+</html>

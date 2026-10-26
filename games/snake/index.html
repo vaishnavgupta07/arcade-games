@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Snake Game Pro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <div class="top-bar">
+      <div class="score-board">
+          Score: <span id="scoreVal">0</span> | Best: <span id="bestScoreTop">0</span>
+      </div>
+      <div class="btn-group">
+          <button id="pauseBtn" class="action-btn pause-btn" onclick="togglePause()">Pause</button>
+          <a href="../../index.html" class="action-btn exit-btn">Exit</a>
+      </div>
+  </div>
+
+  <!-- Mobile On-Screen Controls -->
+  <div class="mobile-dpad">
+      <div class="dpad-btn" id="btnUp">⬆️</div>
+      <div class="dpad-middle">
+          <div class="dpad-btn" id="btnLeft">⬅️</div>
+          <div class="dpad-btn" id="btnRight">➡️</div>
+      </div>
+      <div class="dpad-btn" id="btnDown">⬇️</div>
+  </div>
+
+  <div id="gameOverModal">
+      <h2>Game Over! 🐍</h2>
+      <p id="motivationalText"></p>
+      <div class="score-details">Score: <span id="finalScore">0</span></div>
+      <div class="score-details">Best Score: <span id="bestScoreDisplay">0</span></div>
+      
+      <div class="modal-btn-container">
+          <button class="modal-btn restart-btn" onclick="location.reload()">Restart</button>
+          <a href="../../index.html" class="modal-btn exit-modal-btn">Exit</a>
+      </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let box = 25; 
+    let cols = Math.floor(canvas.width / box);
+    let rows = Math.floor(canvas.height / box);
+
+    let snake = [];
+    snake[0] = { x: Math.floor(cols / 2) * box, y: Math.floor(rows / 2) * box };
+
+    let score = 0;
+    let bestScore = localStorage.getItem("snakeBestScore") || 0;
+    document.getElementById("bestScoreTop").innerText = bestScore;
+
+    let food = generateFood(); 
+    let d = "RIGHT";
+    let speed = 200; 
+    let game; 
+    
+    let isPaused = false;
+    let isGameOver = false;
+
+    function generateFood() {
+        let valid = false;
+        let foodX, foodY;
+        while (!valid) {
+            let fx = Math.floor(Math.random() * cols);
+            let fy = Math.floor(Math.random() * rows);
+            
+            let onSnake = false;
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].x === fx * box && snake[i].y === fy * box) {
+                    onSnake = true;
+                    break;
+                }
+            }
+            if (onSnake) continue;
+            valid = true;
+            foodX = fx * box;
+            foodY = fy * box;
+        }
+        return { x: foodX, y: foodY };
+    }
+
+    function togglePause() {
+        if (isGameOver || countdown >= 0) return;
+        isPaused = !isPaused;
+        let pauseBtn = document.getElementById("pauseBtn");
+
+        if (isPaused) {
+            clearInterval(game);
+            pauseBtn.innerText = "Resume";
+            pauseBtn.style.background = "#FF9800";
+            
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#1b5e20";
+            ctx.font = "bold 50px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
+        } else {
+            pauseBtn.innerText = "Pause";
+            pauseBtn.style.background = "#2196F3";
+            game = setInterval(draw, speed);
+        }
+    }
+
+    // --- KEYBOARD CONTROLS (For PC) ---
+    document.addEventListener("keydown", function(event) {
+        if(event.keyCode == 32) { togglePause(); return; }
+        if (isPaused) return;
+
+        if(event.keyCode == 37 && d != "RIGHT") d = "LEFT";
+        else if(event.keyCode == 38 && d != "DOWN") d = "UP";
+        else if(event.keyCode == 39 && d != "LEFT") d = "RIGHT";
+        else if(event.keyCode == 40 && d != "UP") d = "DOWN";
+    });
+
+    // --- ON-SCREEN BUTTON CONTROLS (For Mobile) ---
+    function setDirection(newDir) {
+        if(isPaused || isGameOver) return;
+        if(newDir == "LEFT" && d != "RIGHT") d = "LEFT";
+        if(newDir == "UP" && d != "DOWN") d = "UP";
+        if(newDir == "RIGHT" && d != "LEFT") d = "RIGHT";
+        if(newDir == "DOWN" && d != "UP") d = "DOWN";
+    }
+
+    document.getElementById("btnUp").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("UP"); });
+    document.getElementById("btnDown").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("DOWN"); });
+    document.getElementById("btnLeft").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("LEFT"); });
+    document.getElementById("btnRight").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("RIGHT"); });
+
+    // --- SWIPE CONTROLS (For Mobile) ---
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    window.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, {passive: false});
+
+    window.addEventListener('touchend', function(e) {
+        if(isPaused || isGameOver) return;
+        let touchEndX = e.changedTouches[0].screenX;
+        let touchEndY = e.changedTouches[0].screenY;
+        
+        let diffX = touchEndX - touchStartX;
+        let diffY = touchEndY - touchStartY;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            // Horizontal Swipe
+            if (diffX > 40 && d != "LEFT") d = "RIGHT";
+            else if (diffX < -40 && d != "RIGHT") d = "LEFT";
+        } else {
+            // Vertical Swipe
+            if (diffY > 40 && d != "UP") d = "DOWN";
+            else if (diffY < -40 && d != "DOWN") d = "UP";
+        }
+    }, {passive: false});
+
+    // --- GAME ENGINE ---
+    function draw() {
+        ctx.fillStyle = "#e8f5e9";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for(let i = 0; i < snake.length; i++) {
+            ctx.fillStyle = (i == 0) ? "#1b5e20" : "#43a047"; 
+            ctx.beginPath();
+            ctx.arc(snake[i].x + box/2, snake[i].y + box/2, (box/2) - 1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.font = (box * 0.9) + "px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🍊", food.x + box/2, food.y + box/2);
+
+        let snakeX = snake[0].x;
+        let snakeY = snake[0].y;
+
+        if(d == "LEFT") snakeX -= box;
+        if(d == "UP") snakeY -= box;
+        if(d == "RIGHT") snakeX += box;
+        if(d == "DOWN") snakeY += box;
+
+        if(snakeX == food.x && snakeY == food.y) {
+            score++;
+            document.getElementById("scoreVal").innerText = score;
+            food = generateFood(); 
+            if(speed > 70) {
+                speed -= 4; 
+                clearInterval(game);
+                game = setInterval(draw, speed);
+            }
+        } else {
+            snake.pop();
+        }
+
+        let newHead = {x: snakeX, y: snakeY};
+
+        let gameOver = false;
+        if(snakeX < 0 || snakeY < 0 || snakeX >= cols*box || snakeY >= rows*box) {
+            gameOver = true;
+        }
+        
+        for(let i = 0; i < snake.length; i++){
+            if(newHead.x == snake[i].x && newHead.y == snake[i].y){
+                gameOver = true;
+            }
+        }
+
+        if(gameOver){
+            isGameOver = true;
+            clearInterval(game);
+            showGameOverMenu(); 
+            return;
+        }
+        
+        snake.unshift(newHead);
+    }
+
+    function showGameOverMenu() {
+        let textElement = document.getElementById("motivationalText");
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem("snakeBestScore", bestScore); 
+            textElement.innerText = "New High Score! 🎉";
+            textElement.style.color = "#4CAF50";
+        } else {
+            textElement.innerText = "Keep it up! Best: " + bestScore;
+        }
+        document.getElementById("finalScore").innerText = score;
+        document.getElementById("bestScoreDisplay").innerText = bestScore;
+        document.getElementById("gameOverModal").style.display = "block";
+    }
+
+    let countdown = 3;
+    function drawCountdown() {
+        ctx.fillStyle = "#e8f5e9";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#e64a19";
+        ctx.font = "bold 80px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        if (countdown > 0) ctx.fillText(countdown, canvas.width/2, canvas.height/2);
+        else if (countdown === 0) ctx.fillText("GO!", canvas.width/2, canvas.height/2);
+    }
+
+    drawCountdown(); 
+    let countInterval = setInterval(() => {
+        countdown--;
+        if (countdown >= 0) {
+            drawCountdown();
+        } else {
+            clearInterval(countInterval);
+            game = setInterval(draw, speed); 
+        }
+    }, 1000);
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        cols = Math.floor(canvas.width / box);
+        rows = Math.floor(canvas.height / box);
+    });
+  </script>
+</body>
+</html>

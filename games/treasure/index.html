@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Realistic Treasure Hunt Adventure</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="top-bar">
+      <div class="stats coin-text">🪙 <span id="coinDisplay">10</span></div>
+      <div class="stats lives-text">❤️ <span id="livesDisplay">3</span></div>
+      <div class="stats timer-text" id="timerBox" style="display:none;">⏱️ <span id="timerDisplay">300</span>s</div>
+      <a href="../../index.html" class="exit-btn">Exit</a>
+  </div>
+
+  <div id="levelMapScreen">
+      <h2>Mystery Rooms</h2>
+      <p style="color: #9ca3af; font-size: 0.9rem;">Solve 5 mysterious riddles per level! Limit: 5 Mins | 3 Mistakes allowed.</p>
+      <div class="level-grid" id="levelGrid"></div>
+  </div>
+
+  <div class="game-layout" id="mainGameLayout">
+      <div class="sidebar">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3>📜 Mystery Clue</h3>
+              <button class="back-map-btn" onclick="returnToMap()">Map</button>
+          </div>
+          <div class="side-clue-text" id="sideClueText">Loading clue...</div>
+          <div class="rule-note">⚠️ 5 Min Timer | 3 Mistakes Limit</div>
+      </div>
+
+      <div class="room-container">
+          <div class="room-header">
+              <span id="locationTag" class="location-tag">📍 Room</span>
+              <span id="clueProgress" style="font-weight:bold; color:#4b5563; font-size: 0.85rem;">Clue 1 of 5</span>
+          </div>
+
+          <div class="room-grid" id="roomGrid"></div>
+
+          <div class="bottom-controls">
+              <button class="hint-btn" onclick="useHint()">Hint (-2 🪙)</button>
+              <div id="message"></div>
+          </div>
+      </div>
+  </div>
+
+  <div id="treasureModal">
+      <div class="modal-content">
+          <h2 style="color: #d97706; margin-top:0; font-size: 1.3rem;">🏆 YOU FOUND THIS TREASURE!</h2>
+          <p id="treasureDesc" style="font-size: 0.9rem; font-weight: 500; margin: 5px 0;"></p>
+          <img id="treasureImg" src="https://images.unsplash.com/photo-1546776310-eef45dd6d63c?auto=format&fit=crop&w=600&q=80" alt="Treasure Chest">
+          <button class="claim-btn" onclick="closeTreasureModal()">Claim Reward (+10 🪙)</button>
+      </div>
+  </div>
+
+  <script>
+    const levels = [
+        { level: 1, name: 'Living Room', time: 300, treasureName: 'Silver Pocket Watch', clues: [
+            { text: "Where glowing pictures speak tales of distant lands without opening their mouths.", target: "TV", emoji: "📺", hint: "Glowing electronic screen." },
+            { text: "A low wooden plateau awaiting cups of brew in the center of gathering.", target: "Coffee Table", emoji: "🪵", hint: "Table before the sofa." },
+            { text: "Where weary souls sink deep to cast away the day's heavy burdens.", target: "Sofa", emoji: "🛋️", hint: "Plush lounge seating." },
+            { text: "A woven fabric guardian protecting barefoot steps from the chilling floor.", target: "Rug", emoji: "🧶", hint: "Textured floor mat." },
+            { text: "Silent keepers of ancient tales standing tall against the painted wall.", target: "Bookshelf", emoji: "📚", hint: "Wooden book storage." }
+        ], baseObjects: ['TV', 'Coffee Table', 'Sofa', 'Rug', 'Bookshelf', 'Vase', 'Wall Clock', 'Lamp', 'Speaker', 'Puzzle Piece', 'Shell', 'Compass', 'Candle'] },
+
+        { level: 2, name: 'Bedroom', time: 300, treasureName: 'Golden Locket', clues: [
+            { text: "A flat sanctuary where weary bodies surrender to the realm of dreams.", target: "Bed", emoji: "🛏️", hint: "Sleeping mattress." },
+            { text: "A towering wooden vault guarding folded secrets and silent garments.", target: "Wardrobe", emoji: "🚪", hint: "Large clothes cabinet." },
+            { text: "A soft cloud resting beneath weary heads when night whispers sleep.", target: "Pillow", emoji: "☁️", hint: "Bed cushion." },
+            { text: "A silver-tongued glass that mirrors reality yet reveals no thoughts.", target: "Mirror", emoji: "🪞", hint: "Reflective glass surface." },
+            { text: "Flowing fabrics that shield the window pane from prying sunbeams.", target: "Curtains", emoji: "🪟", hint: "Window drapery." }
+        ], baseObjects: ['Bed', 'Wardrobe', 'Pillow', 'Mirror', 'Curtains', 'Nightstand', 'Alarm Clock', 'Rug', 'Hanger', 'Backpack', 'Puzzle Piece', 'Key'] },
+
+        { level: 3, name: 'Kitchen', time: 300, treasureName: 'Ancient Spice Jar', clues: [
+            { text: "A frosty chamber keeping perishable treasures safe from summer's wrath.", target: "Fridge", emoji: "🧊", hint: "Cold appliance." },
+            { text: "A heated metal hearth where raw ingredients transform into savory feasts.", target: "Stove", emoji: "🔥", hint: "Cooking burner range." },
+            { text: "Where liquid currents flow downward, vanishing into a dark metallic abyss.", target: "Sink", emoji: "🚰", hint: "Washing basin." },
+            { text: "A silver blade with no fear of slicing through stubborn bonds.", target: "Knife", emoji: "🔪", hint: "Sharp cutting tool." },
+            { text: "A ceramic vessel holding warm steamy brews for morning awakenings.", target: "Mug", emoji: "☕", hint: "Drinking cup with handle." }
+        ], baseObjects: ['Fridge', 'Stove', 'Sink', 'Knife', 'Mug', 'Microwave', 'Cutting Board', 'Plate', 'Blender', 'Sponge', 'Shell', 'Scroll'] },
+
+        { level: 4, name: 'Bathroom', time: 300, treasureName: 'Crystal Perfume', clues: [
+            { text: "Where artificial rain falls from above to cleanse tired travelers.", target: "Shower", emoji: "🚿", hint: "Overhead water fixture." },
+            { text: "A fluffy fabric hanging close by, thirsty to wipe away moisture.", target: "Towel", emoji: "🧺", hint: "Drying cloth." },
+            { text: "A soapy brick that melts into fragrant foam upon meeting water.", target: "Soap", emoji: "🧼", hint: "Cleaning bar." },
+            { text: "A porcelain basin waiting patiently beneath a gleaming brass spout.", target: "Washbasin", emoji: "🚰", hint: "Ceramic sink bowl." },
+            { text: "A spiral cylinder of paper ready to absorb messy mishaps.", target: "Tissue Roll", emoji: "🧻", hint: "Roll dispenser." }
+        ], baseObjects: ['Shower', 'Towel', 'Soap', 'Washbasin', 'Tissue Roll', 'Shampoo', 'Mirror', 'Bucket', 'Mat', 'Rubber Duck', 'Puzzle Piece'] },
+
+        { level: 5, name: 'Study Room', time: 300, treasureName: 'Royal Quill Pen', clues: [
+            { text: "A flat timber arena where ink and parchment wage silent wars.", target: "Study Desk", emoji: "🪑", hint: "Writing table." },
+            { text: "An orderly grid of letters waiting for fingertips to awaken them.", target: "Keyboard", emoji: "⌨️", hint: "Typing board." },
+            { text: "A mechanical sun casting focused beams over midnight essays.", target: "Table Lamp", emoji: "🏮", hint: "Desk light." },
+            { text: "A cylindrical guard keeping scattered quills and pens upright.", target: "Pen Holder", emoji: "✏️", hint: "Stationery cup." },
+            { text: "A towering repository of bound wisdom standing against the corner.", target: "Bookcase", emoji: "📖", hint: "Large bookcase." }
+        ], baseObjects: ['Study Desk', 'Keyboard', 'Table Lamp', 'Pen Holder', 'Bookcase', 'Globe', 'Laptop', 'Chair', 'Scissors', 'Magnifying Glass', 'Scroll'] },
+
+        { level: 6, name: 'Balcony', time: 300, treasureName: 'Emerald Ring', clues: [
+            { text: "A clay cradle sheltering a green shoot dreaming of open skies.", target: "Flower Pot", emoji: "🪴", hint: "Plant pot." },
+            { text: "An iron fence guarding wanderers from taking a perilous plunge.", target: "Railing", emoji: "🚧", hint: "Safety barrier." },
+            { text: "A stretched line dancing in the breeze while damp garments dry.", target: "Clothesline", emoji: "👕", hint: "Laundry wire." },
+            { text: "A lonely globe mounted on stone, shedding night beacons from above.", target: "Wall Light", emoji: "💡", hint: "Patio light." },
+            { text: "A solitary seat overlooking street views as twilight descends.", target: "Patio Chair", emoji: "🪑", hint: "Outdoor chair." }
+        ], baseObjects: ['Flower Pot', 'Railing', 'Clothesline', 'Wall Light', 'Patio Chair', 'Watering Can', 'Mat', 'Wind Chime', 'Broom', 'Bird Feather', 'Shell'] },
+
+        { level: 7, name: 'School Class', time: 300, treasureName: 'Academic Medal', clues: [
+            { text: "A slate canvas where white chalk spells out mathematics and history.", target: "Blackboard", emoji: "🏫", hint: "Classroom board." },
+            { text: "Paired wooden benches where young minds absorb strict discipline.", target: "School Bench", emoji: "🪑", hint: "Student desk." },
+            { text: "A rigid plastic strip boasting absolute precision in straight lines.", target: "Ruler", emoji: "📏", hint: "Measuring scale." },
+            { text: "A humble eraser sacrificing its own body to wipe away past mistakes.", target: "Eraser", emoji: "🧹", hint: "Rubber eraser." },
+            { text: "A canvas pouch strapped to shoulders carrying heavy literary loads.", target: "School Bag", emoji: "🎒", hint: "Student backpack." }
+        ], baseObjects: ['Blackboard', 'School Bench', 'Ruler', 'Eraser', 'School Bag', 'Globe', 'Duster', 'Notice Board', 'Teacher Desk', 'Chalk', 'Compass'] },
+
+        { level: 8, name: 'Supermarket', time: 300, treasureName: 'Diamond Gem', clues: [
+            { text: "A wire basket on wheels collecting endless grocery bounties.", target: "Shopping Cart", emoji: "🛒", hint: "Grocery trolley." },
+            { text: "A final barrier where paper notes are exchanged for purchased goods.", target: "Checkout Counter", emoji: "💳", hint: "Billing desk." },
+            { text: "A tiered wooden display overflowing with nature's sweet orchard harvest.", target: "Fruit Stand", emoji: "🍎", hint: "Produce rack." },
+            { text: "A refrigerated glass portal chilling carbonated liquid treasures.", target: "Soda Cooler", emoji: "🥤", hint: "Beverage fridge." },
+            { text: "A mechanical roll spitting out long paper lists of totals and tax.", target: "Receipt Printer", emoji: "🖨️", hint: "Billing machine." }
+        ], baseObjects: ['Shopping Cart', 'Checkout Counter', 'Fruit Stand', 'Soda Cooler', 'Receipt Printer', 'Basket', 'Weighing Scale', 'Shelf', 'Scanner', 'Coin Pouch', 'Receipt'] },
+
+        { level: 9, name: 'City Park', time: 300, treasureName: 'Crown Jewel', clues: [
+            { text: "Suspended ropes offering joyful flights toward the leafy canopy.", target: "Swing Set", emoji: "🎠", hint: "Playground swing." },
+            { text: "A weathered wooden bench offering restful pauses amidst green lawns.", target: "Park Bench", emoji: "🪑", hint: "Garden bench." },
+            { text: "A metal maw swallowing discarded wrappers and empty bottles.", target: "Dustbin", emoji: "🗑️", hint: "Waste bin." },
+            { text: "A splashing basin sprouting sparkling water streams into the sunlight.", target: "Water Fountain", emoji: "⛲", hint: "Water fountain." },
+            { text: "A vibrant patch of soil painted in nature's brightest petal hues.", target: "Flower Bed", emoji: "🌷", hint: "Garden flower patch." }
+        ], baseObjects: ['Swing Set', 'Park Bench', 'Dustbin', 'Water Fountain', 'Flower Bed', 'Lamp Post', 'Slide', 'Pebble Path', 'Bush', 'Leaf', 'Acorn'] },
+
+        { level: 10, name: 'Vault Room', time: 300, treasureName: 'Emperor Crown', clues: [
+            { text: "A massive metallic barrier forged to withstand siege and time.", target: "Steel Vault Door", emoji: "🚪", hint: "Vault entrance." },
+            { text: "An ancient stone monolith bearing cryptic carvings of old empires.", target: "Stone Altar", emoji: "🗿", hint: "Carved pedestal." },
+            { text: "A flickering iron sconce casting dancing shadows across damp stone walls.", target: "Torch Stand", emoji: "🔥", hint: "Wall fire torch." },
+            { text: "A heavy iron lockbox protecting forgotten royal heirlooms.", target: "Iron Chest", emoji: "🗝️", hint: "Secure lockbox." },
+            { text: "The ultimate glittering prize ending a legendary quest of wits!", target: "Golden Treasure Chest", emoji: "👑", hint: "Ultimate chest." }
+        ], baseObjects: ['Steel Vault Door', 'Stone Altar', 'Torch Stand', 'Iron Chest', 'Golden Treasure Chest', 'Statue', 'Pillar', 'Scrolls', 'Chandelier', 'Gemstone', 'Key'] }
+    ];
+
+    let unlockedLevel = parseInt(localStorage.getItem("unlockedTreasureLevel")) || 1;
+    let coins = 10;
+    let lives = 3;
+    let currentLevelIndex = 0;
+    let currentClueIndex = 0;
+    let timer;
+    let timeLeft = 300;
+
+    const levelMapScreen = document.getElementById("levelMapScreen");
+    const mainGameLayout = document.getElementById("mainGameLayout");
+    const levelGrid = document.getElementById("levelGrid");
+    const coinDisplay = document.getElementById("coinDisplay");
+    const livesDisplay = document.getElementById("livesDisplay");
+    const timerBox = document.getElementById("timerBox");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const locationTag = document.getElementById("locationTag");
+    const clueProgress = document.getElementById("clueProgress");
+    const sideClueText = document.getElementById("sideClueText");
+    const roomGrid = document.getElementById("roomGrid");
+    const message = document.getElementById("message");
+    const treasureModal = document.getElementById("treasureModal");
+    const treasureDesc = document.getElementById("treasureDesc");
+
+    function renderLevelMap() {
+        levelGrid.innerHTML = "";
+        levels.forEach((lvl) => {
+            let card = document.createElement("div");
+            card.className = "level-card";
+            card.innerText = `Level ${lvl.level}`;
+
+            if (lvl.level < unlockedLevel) {
+                card.classList.add("completed");
+                card.onclick = () => startLevel(lvl.level - 1);
+            } else if (lvl.level === unlockedLevel) {
+                card.classList.add("unlocked");
+                card.onclick = () => startLevel(lvl.level - 1);
+            } else {
+                card.classList.add("locked");
+                card.onclick = () => alert("🔒 Complete the previous room first!");
+            }
+            levelGrid.appendChild(card);
+        });
+    }
+
+    function startLevel(index) {
+        currentLevelIndex = index;
+        lives = 3;
+        livesDisplay.innerText = lives;
+        levelMapScreen.style.display = "none";
+        mainGameLayout.style.display = "flex";
+        timerBox.style.display = "block";
+        loadLevel();
+    }
+
+    function returnToMap() {
+        clearInterval(timer);
+        mainGameLayout.style.display = "none";
+        timerBox.style.display = "none";
+        levelMapScreen.style.display = "block";
+        renderLevelMap();
+    }
+
+    function startTimer(duration) {
+        clearInterval(timer);
+        timeLeft = duration;
+        timerDisplay.innerText = timeLeft;
+
+        timer = setInterval(() => {
+            timeLeft--;
+            timerDisplay.innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                alert("⏱️ Time is up! Reloading room.");
+                loadLevel();
+            }
+        }, 1000);
+    }
+
+    function loadLevel() {
+        clearInterval(timer);
+        let lvl = levels[currentLevelIndex];
+
+        coinDisplay.innerText = coins;
+        livesDisplay.innerText = lives;
+        message.innerText = "";
+        currentClueIndex = 0;
+        locationTag.innerText = `📍 ${lvl.name}`;
+
+        loadCurrentClueAndRefreshRoom();
+        startTimer(lvl.time);
+    }
+
+    function loadCurrentClueAndRefreshRoom() {
+        let lvl = levels[currentLevelIndex];
+        let clueData = lvl.clues[currentClueIndex];
+
+        clueProgress.innerText = `Clue ${currentClueIndex + 1} of 5`;
+        sideClueText.innerText = clueData.text;
+
+        let activeObjects = [clueData.target];
+        
+        for(let i = currentClueIndex + 1; i < lvl.clues.length; i++) {
+            activeObjects.push(lvl.clues[i].target);
+        }
+
+        lvl.baseObjects.forEach(obj => {
+            if (!activeObjects.includes(obj) && activeObjects.length < 8) {
+                activeObjects.push(obj);
+            }
+        });
+
+        activeObjects.sort(() => Math.random() - 0.5);
+
+        roomGrid.innerHTML = "";
+        activeObjects.forEach(objName => {
+            let card = document.createElement("div");
+            card.className = "room-obj";
+            
+            let matchedClue = lvl.clues.find(c => c.target === objName);
+            let displayEmoji = matchedClue ? "📦" : "🔍";
+
+            card.innerHTML = `<span class="icon">${displayEmoji}</span><span class="name">${objName}</span>`;
+            card.onclick = () => checkObjectSelection(objName, card);
+            roomGrid.appendChild(card);
+        });
+    }
+
+    function checkObjectSelection(objName, cardElement) {
+        let lvl = levels[currentLevelIndex];
+        let currentClue = lvl.clues[currentClueIndex];
+
+        if (objName === currentClue.target) {
+            currentClueIndex++;
+
+            if (currentClueIndex < 5) {
+                message.innerHTML = `✅ Correct! Loading next clue...`;
+                message.className = "success";
+                setTimeout(loadCurrentClueAndRefreshRoom, 800);
+            } else {
+                clearInterval(timer);
+                
+                treasureDesc.innerText = `Congratulations! You solved all clues and uncovered the ${lvl.level === 10 ? 'Golden Treasure' : lvl.treasureName}!`;
+                treasureModal.style.display = "flex";
+
+                if (currentLevelIndex + 1 >= unlockedLevel && unlockedLevel < 10) {
+                    unlockedLevel = currentLevelIndex + 2;
+                    localStorage.setItem("unlockedTreasureLevel", unlockedLevel);
+                }
+            }
+        } else {
+            lives--;
+            livesDisplay.innerText = lives;
+            if (lives <= 0) {
+                clearInterval(timer);
+                alert("❌ All 3 chances lost! Restarting level.");
+                lives = 3;
+                loadLevel();
+            } else {
+                message.innerHTML = `❌ Wrong object! (${lives} chances left)`;
+                message.className = "error";
+            }
+        }
+    }
+
+    function closeTreasureModal() {
+        treasureModal.style.display = "none";
+        coins += 10;
+        coinDisplay.innerText = coins;
+        currentLevelIndex++;
+        returnToMap();
+    }
+
+    function useHint() {
+        let lvl = levels[currentLevelIndex];
+        let currentClue = lvl.clues[currentClueIndex];
+        if (coins >= 2) {
+            coins -= 2;
+            coinDisplay.innerText = coins;
+            message.innerHTML = `💡 Hint: ${currentClue.hint} (Look for: ${currentClue.target})`;
+            message.className = "success";
+        } else {
+            message.innerHTML = `❌ Not enough coins for a hint!`;
+            message.className = "error";
+        }
+    }
+
+    renderLevelMap();
+  </script>
+</body>
+</html>
