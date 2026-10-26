@@ -3,308 +3,418 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcade Zone | Interactive Web Games</title>
-    <meta name="description" content="A collection of interactive retro browser games built with pure JavaScript, HTML5 Canvas, and CSS3 by Vaishnav Gupta.">
+    <title>Arcade Zone | Premium Web Gaming Platform</title>
+    <meta name="description" content="A curated collection of modern retro browser games built with pure JavaScript, HTML5 Canvas, Web Audio, and CSS3 by Vaishnav Gupta.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Press+Start+2P&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="shared/arcade.css">
     <style>
-        :root {
-            --bg-color: #0a0e17;
-            --card-bg: rgba(22, 29, 47, 0.7);
-            --card-border: rgba(99, 102, 241, 0.2);
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --cyan: #06b6d4;
-            --pink: #ec4899;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--arcade-bg);
             background-image: 
-                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-            color: var(--text-main);
+                radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(255, 0, 127, 0.08) 0%, transparent 45%),
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+            color: var(--arcade-text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
         }
 
-        /* Top Navigation */
-        .top-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.25rem 2rem;
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        .brand-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 0.85rem;
-            color: var(--cyan);
-            text-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
-            letter-spacing: 1px;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.25rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 9999px;
-            color: var(--text-main);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: all 0.25s ease;
-            backdrop-filter: blur(8px);
-        }
-
-        .back-link:hover {
-            background: rgba(99, 102, 241, 0.2);
-            border-color: var(--primary);
-            box-shadow: 0 0 15px var(--primary-glow);
-            transform: translateY(-2px);
-        }
-
         /* Hero */
-        .hero {
-            text-align: center;
-            padding: 3rem 1.5rem 2rem;
-            max-width: 800px;
+        .arcade-hero {
+            padding: 7rem 1.5rem 2.5rem;
+            max-width: 1200px;
             margin: 0 auto;
+            width: 100%;
+            text-align: center;
         }
 
-        .retro-title {
-            font-family: 'Press Start 2P', monospace;
-            font-size: clamp(1.8rem, 4vw, 2.8rem);
+        .hero-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1rem;
+            border-radius: 9999px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--arcade-cyan);
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+
+        .hero-title {
+            font-family: var(--arcade-font-retro);
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            line-height: 1.35;
             margin-bottom: 1.25rem;
-            background: linear-gradient(135deg, #ffffff 0%, var(--cyan) 50%, var(--pink) 100%);
+            background: linear-gradient(135deg, #ffffff 0%, var(--arcade-cyan) 50%, var(--arcade-pink) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
-            line-height: 1.4;
+            text-shadow: 0 0 35px rgba(0, 240, 255, 0.4);
         }
 
-        .hero-desc {
-            font-size: 1.1rem;
-            color: var(--text-muted);
-            line-height: 1.6;
-            margin-bottom: 2rem;
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--arcade-text-dim);
+            max-width: 720px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.65;
         }
 
-        .stats-pills {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
+        /* Featured Showcase Banner */
+        .featured-banner {
+            background: linear-gradient(135deg, rgba(20, 28, 48, 0.9) 0%, rgba(12, 16, 28, 0.9) 100%);
+            border: 1px solid rgba(0, 240, 255, 0.35);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            max-width: 1100px;
+            margin: 0 auto 3.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 2rem;
+            align-items: center;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 240, 255, 0.15);
         }
 
-        .pill {
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 0.4rem 1rem;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.04);
+        .featured-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--arcade-cyan), var(--arcade-pink));
+        }
+
+        .featured-art {
+            background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            color: var(--text-muted);
+            border-radius: 1rem;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .featured-info .spotlight-tag {
+            font-family: var(--arcade-font-retro);
+            font-size: 0.7rem;
+            color: var(--arcade-yellow);
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
         }
 
-        .pill i {
-            color: var(--cyan);
+        .featured-info h3 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            color: #ffffff;
+        }
+
+        .featured-info p {
+            color: var(--arcade-text-dim);
+            font-size: 0.95rem;
+            line-height: 1.55;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Filter & Search Bar */
+        .hub-controls {
+            max-width: 1100px;
+            margin: 0 auto 2.5rem;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1.1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--arcade-text-dim);
+            font-size: 0.95rem;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(18, 24, 38, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 0.75rem 1.25rem 0.75rem 2.75rem;
+            color: var(--arcade-text);
+            font-family: var(--arcade-font-ui);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--arcade-cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            background: rgba(22, 30, 48, 0.95);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--arcade-text-dim);
+            padding: 0.55rem 1.1rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--arcade-cyan);
+            color: var(--arcade-text);
+        }
+
+        .filter-chip.active {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: var(--arcade-cyan);
+            color: var(--arcade-cyan);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
         }
 
         /* Games Grid */
-        .games-section {
-            max-width: 1200px;
+        .games-collection {
+            max-width: 1100px;
+            margin: 0 auto 5rem;
             width: 100%;
-            margin: 0 auto;
-            padding: 2rem 1.5rem 4rem;
-            flex-grow: 1;
+            padding: 0 1rem;
         }
 
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
         }
 
-        .game-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 1.25rem;
-            padding: 2rem;
+        .game-card-hub {
+            background: var(--arcade-surface-card);
+            border: 1px solid var(--arcade-border);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            text-align: center;
             text-decoration: none;
-            color: var(--text-main);
+            color: var(--arcade-text);
             transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
             position: relative;
             overflow: hidden;
         }
 
-        .game-card::before {
+        .game-card-hub::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            background: linear-gradient(90deg, transparent, var(--arcade-cyan), transparent);
             opacity: 0;
-            transition: opacity 0.35s ease;
+            transition: opacity 0.3s ease;
         }
 
-        .game-card:hover {
+        .game-card-hub:hover {
             transform: translateY(-8px);
-            border-color: var(--primary);
-            box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5), 0 0 24px var(--primary-glow);
+            border-color: var(--arcade-cyan);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 240, 255, 0.2);
         }
 
-        .game-card:hover::before {
+        .game-card-hub:hover::before {
             opacity: 1;
         }
 
-        .game-icon-box {
-            width: 90px;
-            height: 90px;
-            border-radius: 1.25rem;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        /* Card Art Canvas / Banner */
+        .card-art-box {
+            width: 100%;
+            height: 160px;
+            border-radius: 1rem;
+            background: #090c15;
+            border: 1px solid rgba(255, 255, 255, 0.06);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
+            position: relative;
+            overflow: hidden;
             transition: transform 0.35s ease;
         }
 
-        .game-card:hover .game-icon-box {
-            transform: scale(1.1) rotate(4deg);
+        .game-card-hub:hover .card-art-box {
+            transform: scale(1.02);
         }
 
-        .game-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 0.6rem;
+        .card-top-badges {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .diff-pill {
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .diff-casual { background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.4); }
+        .diff-medium { background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.4); }
+        .diff-hard { background: rgba(255, 0, 127, 0.2); color: #ff007f; border: 1px solid rgba(255, 0, 127, 0.4); }
+
+        .fav-toggle-btn {
+            pointer-events: auto;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .fav-toggle-btn.favorited {
+            color: var(--arcade-pink);
+            background: rgba(255, 0, 127, 0.25);
+            border-color: var(--arcade-pink);
+        }
+
+        .game-card-hub .card-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
             letter-spacing: -0.02em;
         }
 
-        .game-desc {
+        .game-card-hub .card-desc {
             font-size: 0.92rem;
-            color: var(--text-muted);
+            color: var(--arcade-text-dim);
             line-height: 1.5;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             flex-grow: 1;
         }
 
-        .tech-tags {
+        .card-stats-row {
             display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 1.5rem;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.85rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0.75rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.82rem;
+            font-family: var(--arcade-font-mono);
         }
 
-        .tag {
-            font-size: 0.72rem;
-            font-weight: 600;
-            padding: 0.25rem 0.65rem;
-            border-radius: 6px;
-            background: rgba(99, 102, 241, 0.12);
-            color: #a5b4fc;
-            border: 1px solid rgba(99, 102, 241, 0.25);
+        .card-stats-row .score-tag {
+            color: var(--arcade-yellow);
+            font-weight: 700;
         }
 
-        .play-button {
+        .card-play-btn {
             width: 100%;
-            padding: 0.85rem 1.5rem;
-            background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+            padding: 0.85rem 1.25rem;
+            background: linear-gradient(135deg, var(--arcade-cyan) 0%, var(--arcade-purple) 100%);
             border: none;
             border-radius: 0.75rem;
             color: #ffffff;
             font-size: 0.95rem;
             font-weight: 700;
-            letter-spacing: 0.02em;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 14px var(--primary-glow);
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.25);
+            transition: all 0.2s ease;
         }
 
-        .game-card:hover .play-button {
-            background: linear-gradient(135deg, #7c3aed 0%, var(--primary) 100%);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        .game-card-hub:hover .card-play-btn {
+            box-shadow: 0 6px 22px rgba(0, 240, 255, 0.5);
             transform: scale(1.02);
         }
 
-        /* Coming soon card */
-        .card-disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
+        /* Empty State */
+        .empty-search-state {
+            display: none;
+            text-align: center;
+            padding: 4rem 1.5rem;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
-        .card-disabled:hover {
-            transform: none;
-            box-shadow: none;
-            border-color: var(--card-border);
+        .empty-search-state.active {
+            display: block;
         }
 
-        .card-disabled:hover .game-icon-box {
-            transform: none;
-        }
-
-        .btn-disabled {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-muted);
-            box-shadow: none;
-            cursor: not-allowed;
+        .empty-icon {
+            font-size: 3.5rem;
+            color: var(--arcade-pink);
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 15px rgba(255, 0, 127, 0.4));
         }
 
         /* Footer */
         footer {
             border-top: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 2rem 1.5rem;
+            padding: 2.5rem 1.5rem;
             text-align: center;
-            color: var(--text-muted);
-            font-size: 0.88rem;
-            background: rgba(10, 14, 23, 0.8);
-            backdrop-filter: blur(8px);
+            color: var(--arcade-text-dim);
+            font-size: 0.9rem;
+            background: rgba(7, 9, 14, 0.85);
+            backdrop-filter: blur(10px);
+            margin-top: auto;
         }
 
         footer a {
-            color: var(--cyan);
+            color: var(--arcade-cyan);
             text-decoration: none;
             font-weight: 600;
         }
@@ -312,113 +422,376 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        @media (max-width: 768px) {
+            .featured-banner {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+            }
+            .featured-art {
+                height: 170px;
+            }
+            .hub-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
     </style>
 </head>
 <body>
 
     <!-- Top Navigation -->
-    <header class="top-nav">
-        <div class="brand-badge">
-            <i class="fas fa-gamepad"></i> VG-ARCADE
-        </div>
-        <a href="mailto:vaishnav.py@outlook.com" class="back-link" title="Contact Developer">
-            <i class="fas fa-envelope"></i> Contact Developer
+    <header class="arcade-header">
+        <a href="index.html" class="arcade-brand">
+            <div class="arcade-brand-icon"><i class="fas fa-gamepad"></i></div>
+            <span>VG-ARCADE</span>
         </a>
+
+        <div class="arcade-stats-bar">
+            <div class="arcade-badge arcade-badge-highlight">
+                <i class="fas fa-fire"></i> <span>4 PLAYABLE GAMES</span>
+            </div>
+        </div>
+
+        <div class="arcade-actions">
+            <button class="arcade-btn arcade-btn-icon arcade-sound-btn" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
+                <i class="fas fa-volume-up"></i>
+            </button>
+            <a href="mailto:vaishnav.py@outlook.com" class="arcade-btn arcade-btn-ghost" title="Contact Developer">
+                <i class="fas fa-envelope"></i> <span class="hide-mobile">Vaishnav Gupta</span>
+            </a>
+        </div>
     </header>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <h1 class="retro-title">ARCADE ZONE</h1>
-        <p class="hero-desc">
-            A retro-modern suite of interactive web games engineered with pure JavaScript, HTML5 Canvas, and custom physics simulation. Built for performance and fun.
+    <section class="arcade-hero">
+        <div class="hero-badge-pill">
+            <i class="fas fa-microchip"></i> Pure Vanilla JavaScript &amp; HTML5 Canvas
+        </div>
+        <h1 class="hero-title">ARCADE ZONE</h1>
+        <p class="hero-subtitle">
+            An indie browser gaming platform engineered with zero external game frameworks, real-time physics math, synthesized retro Web Audio, and responsive touch controls.
         </p>
-        <div class="stats-pills">
-            <span class="pill"><i class="fas fa-bolt"></i> Zero Dependencies</span>
-            <span class="pill"><i class="fas fa-mobile-alt"></i> Touch & Desktop Controls</span>
-            <span class="pill"><i class="fas fa-trophy"></i> Local High Scores</span>
+
+        <!-- Featured Spotlight Showcase -->
+        <div class="featured-banner">
+            <div class="featured-art">
+                <!-- Custom SVG Vector Artwork for Breakout -->
+                <svg viewBox="0 0 240 160" width="100%" height="100%">
+                    <defs>
+                        <linearGradient id="paddleGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#00f0ff" />
+                            <stop offset="50%" stop-color="#ffffff" />
+                            <stop offset="100%" stop-color="#00f0ff" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Brick rows -->
+                    <rect x="25" y="25" width="40" height="14" rx="3" fill="#ff007f" />
+                    <rect x="70" y="25" width="40" height="14" rx="3" fill="#ffd700" />
+                    <rect x="115" y="25" width="50" height="14" rx="3" fill="#a855f7" />
+                    <rect x="170" y="25" width="45" height="14" rx="3" fill="#00f0ff" />
+
+                    <rect x="35" y="45" width="45" height="14" rx="3" fill="#00f0ff" />
+                    <rect x="85" y="45" width="45" height="14" rx="3" fill="#ff007f" />
+                    <rect x="135" y="45" width="40" height="14" rx="3" fill="#00ff88" />
+                    <rect x="180" y="45" width="35" height="14" rx="3" fill="#ffd700" />
+
+                    <!-- Ball trail and Ball -->
+                    <circle cx="110" cy="110" r="3" fill="rgba(0, 240, 255, 0.4)" />
+                    <circle cx="118" cy="98" r="4.5" fill="rgba(0, 240, 255, 0.6)" />
+                    <circle cx="125" cy="85" r="7" fill="#ffffff" stroke="#00f0ff" stroke-width="2" />
+
+                    <!-- Paddle -->
+                    <rect x="85" y="132" width="75" height="12" rx="6" fill="url(#paddleGlow)" />
+                </svg>
+            </div>
+            <div class="featured-info">
+                <div class="spotlight-tag"><i class="fas fa-star"></i> FEATURED ARCADE CLASSIC</div>
+                <h3>Neon Breakout</h3>
+                <p>
+                    Vaporize multi-tier neon glass bricks, dodge hazards, and catch falling weapon enhancements including Twin Lasers and Multi-Balls.
+                </p>
+                <a href="games/breaker/index.html" class="arcade-btn arcade-btn-primary">
+                    <i class="fas fa-play"></i> Launch Sector 1
+                </a>
+            </div>
         </div>
     </section>
 
+    <!-- Hub Controls (Search & Category Filters) -->
+    <div class="hub-controls">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search games by name or theme..." oninput="handleSearch()">
+        </div>
+
+        <div class="filter-group">
+            <button class="filter-chip active" data-cat="all" onclick="filterCategory('all')">All Games (4)</button>
+            <button class="filter-chip" data-cat="action" onclick="filterCategory('action')">Retro &amp; Action</button>
+            <button class="filter-chip" data-cat="physics" onclick="filterCategory('physics')">Physics &amp; Reflex</button>
+            <button class="filter-chip" data-cat="puzzle" onclick="filterCategory('puzzle')">Mystery &amp; Puzzle</button>
+        </div>
+    </div>
+
     <!-- Games Collection -->
-    <main class="games-section">
-        <div class="games-grid">
-            
-            <!-- Snake Game -->
-            <a href="games/snake/index.html" class="game-card">
-                <div class="game-icon-box">🐍</div>
-                <h2 class="game-title">Classic Snake</h2>
-                <p class="game-desc">
-                    Re-imagined retro arcade snake with fluid frame rendering, collision detection, keyboard and on-screen D-pad controls, and high-score memory.
-                </p>
-                <div class="tech-tags">
-                    <span class="tag">HTML5 Canvas</span>
-                    <span class="tag">Game Loop</span>
-                    <span class="tag">D-Pad Controls</span>
+    <main class="games-collection">
+        <div class="games-grid" id="gamesGrid">
+
+            <!-- 1. Cyber Snake Pro -->
+            <a href="games/snake/index.html" class="game-card-hub" data-id="snake" data-cat="action" data-title="Cyber Snake Pro" onmouseenter="ArcadeAudio.playClick()">
+                <div class="card-art-box">
+                    <div class="card-top-badges">
+                        <span class="diff-pill diff-medium">Speed Escalation</span>
+                        <button class="fav-toggle-btn" onclick="event.preventDefault(); toggleFav('snake', this)" title="Bookmark"><i class="fas fa-heart"></i></button>
+                    </div>
+                    <!-- Custom SVG Art: Neon Snake & Quantum Core -->
+                    <svg viewBox="0 0 200 120" width="100%" height="100%">
+                        <circle cx="145" cy="55" r="14" fill="rgba(0, 240, 255, 0.25)" />
+                        <circle cx="145" cy="55" r="7" fill="#00f0ff" />
+                        <circle cx="145" cy="55" r="3" fill="#ffffff" />
+                        <!-- Snake Body Segments -->
+                        <rect x="40" y="50" width="16" height="16" rx="4" fill="#00ff88" />
+                        <rect x="58" y="50" width="16" height="16" rx="4" fill="#00e6a8" />
+                        <rect x="76" y="50" width="16" height="16" rx="4" fill="#00d0c8" />
+                        <rect x="94" y="50" width="16" height="16" rx="4" fill="#00b8e6" />
+                        <rect x="112" y="50" width="18" height="18" rx="6" fill="#00ff88" stroke="#ffffff" stroke-width="1.5" />
+                        <!-- Eyes -->
+                        <circle cx="122" cy="55" r="2.5" fill="#000000" />
+                        <circle cx="122" cy="63" r="2.5" fill="#000000" />
+                    </svg>
                 </div>
-                <div class="play-button">
-                    <i class="fas fa-play"></i> Play Snake
+                <h2 class="card-title">Cyber Snake Pro</h2>
+                <p class="card-desc">
+                    Re-engineered neon grid arena with queue-based input buffering (no 180° suicide turns), quantum energy cores, and 3 difficulty presets.
+                </p>
+                <div class="card-stats-row">
+                    <span><i class="fas fa-trophy" style="color:var(--arcade-yellow);"></i> High Score</span>
+                    <span class="score-tag" id="hs_snake">0</span>
+                </div>
+                <div class="card-play-btn">
+                    <i class="fas fa-play"></i> Play Cyber Snake
                 </div>
             </a>
 
-            <!-- Bottle Flip -->
-            <a href="games/bottle/index.html" class="game-card">
-                <div class="game-icon-box">🍾</div>
-                <h2 class="game-title">Bottle Flip Pro</h2>
-                <p class="game-desc">
-                    Physics-based bottle flipping simulation. Calculate swipe velocity, rotational torque, and gravity to land the bottle upright for continuous streak points.
-                </p>
-                <div class="tech-tags">
-                    <span class="tag">CSS Transforms</span>
-                    <span class="tag">Physics Math</span>
-                    <span class="tag">Gesture Drag</span>
+            <!-- 2. Bottle Flip Pro -->
+            <a href="games/bottle/index.html" class="game-card-hub" data-id="bottle" data-cat="physics" data-title="Bottle Flip Pro" onmouseenter="ArcadeAudio.playClick()">
+                <div class="card-art-box">
+                    <div class="card-top-badges">
+                        <span class="diff-pill diff-medium">Physics Math</span>
+                        <button class="fav-toggle-btn" onclick="event.preventDefault(); toggleFav('bottle', this)" title="Bookmark"><i class="fas fa-heart"></i></button>
+                    </div>
+                    <!-- Custom SVG Art: 2.5D Glossy Bottle & Landing Platform -->
+                    <svg viewBox="0 0 200 120" width="100%" height="100%">
+                        <!-- Platform -->
+                        <rect x="35" y="95" width="130" height="12" rx="4" fill="#162035" stroke="rgba(0, 240, 255, 0.4)" stroke-width="1.5" />
+                        <rect x="35" y="95" width="130" height="3" fill="#00f0ff" />
+                        <!-- Bottle (Tilted Stunt) -->
+                        <g transform="translate(100, 55) rotate(-18)">
+                            <rect x="-15" y="-35" width="30" height="65" rx="5" fill="rgba(255,255,255,0.2)" stroke="#ffffff" stroke-width="1.5" />
+                            <rect x="-13" y="-5" width="26" height="33" rx="3" fill="rgba(0, 210, 255, 0.75)" />
+                            <rect x="-8" y="-45" width="16" height="10" fill="rgba(255,255,255,0.3)" />
+                            <rect x="-9" y="-50" width="18" height="6" rx="2" fill="#ff007f" />
+                        </g>
+                    </svg>
                 </div>
-                <div class="play-button">
+                <h2 class="card-title">Bottle Flip Pro</h2>
+                <p class="card-desc">
+                    Fluid simulation with real angular slosh dynamics. Charge flip torque, calculate rotation sweet spots, and chain landing multipliers up to 10x.
+                </p>
+                <div class="card-stats-row">
+                    <span><i class="fas fa-trophy" style="color:var(--arcade-yellow);"></i> High Score</span>
+                    <span class="score-tag" id="hs_bottle">0</span>
+                </div>
+                <div class="card-play-btn">
                     <i class="fas fa-play"></i> Play Bottle Flip
                 </div>
             </a>
 
-            <!-- Treasure Hunt -->
-            <a href="games/treasure/index.html" class="game-card">
-                <div class="game-icon-box">🗺️</div>
-                <h2 class="game-title">Treasure Hunt</h2>
-                <p class="game-desc">
-                    Grid puzzle adventure. Navigate coordinates, decipher clues, and track proximity signals to uncover hidden artifacts before your attempts run out.
-                </p>
-                <div class="tech-tags">
-                    <span class="tag">DOM Engine</span>
-                    <span class="tag">Proximity Math</span>
-                    <span class="tag">Grid Layout</span>
+            <!-- 3. Treasure Quest Adventure -->
+            <a href="games/treasure/index.html" class="game-card-hub" data-id="treasure" data-cat="puzzle" data-title="Treasure Quest Adventure" onmouseenter="ArcadeAudio.playClick()">
+                <div class="card-art-box">
+                    <div class="card-top-badges">
+                        <span class="diff-pill diff-casual">10 Rooms</span>
+                        <button class="fav-toggle-btn" onclick="event.preventDefault(); toggleFav('treasure', this)" title="Bookmark"><i class="fas fa-heart"></i></button>
+                    </div>
+                    <!-- Custom SVG Art: Compass & Ancient Scroll -->
+                    <svg viewBox="0 0 200 120" width="100%" height="100%">
+                        <!-- Aged parchment -->
+                        <rect x="40" y="25" width="120" height="70" rx="6" fill="#2b1f14" stroke="#ca8a04" stroke-width="2" />
+                        <line x1="55" y1="42" x2="145" y2="42" stroke="rgba(202, 138, 4, 0.4)" stroke-width="2" stroke-dasharray="4,4" />
+                        <line x1="55" y1="56" x2="135" y2="56" stroke="rgba(202, 138, 4, 0.4)" stroke-width="2" stroke-dasharray="4,4" />
+                        <line x1="55" y1="70" x2="120" y2="70" stroke="rgba(202, 138, 4, 0.4)" stroke-width="2" stroke-dasharray="4,4" />
+                        <!-- Golden Compass -->
+                        <circle cx="140" cy="65" r="20" fill="#18181b" stroke="#ffd700" stroke-width="2" />
+                        <polygon points="140,50 144,65 140,68 136,65" fill="#ef4444" />
+                        <polygon points="140,80 144,65 140,68 136,65" fill="#ffffff" />
+                    </svg>
                 </div>
-                <div class="play-button">
-                    <i class="fas fa-play"></i> Play Treasure Hunt
+                <h2 class="card-title">Treasure Quest</h2>
+                <p class="card-desc">
+                    Decipher enigmatic clues across 10 mystery environments. Features bespoke vector artifact icons, clue hint mechanics, and gold bounty chests.
+                </p>
+                <div class="card-stats-row">
+                    <span><i class="fas fa-coins" style="color:var(--arcade-yellow);"></i> Relics Unlocked</span>
+                    <span class="score-tag" id="hs_treasure">Room 1/10</span>
+                </div>
+                <div class="card-play-btn">
+                    <i class="fas fa-play"></i> Play Treasure Quest
                 </div>
             </a>
 
-            <!-- Brick Breaker (Coming Soon) -->
-            <div class="game-card card-disabled">
-                <div class="game-icon-box">🧱</div>
-                <h2 class="game-title">Brick Breaker</h2>
-                <p class="game-desc">
-                    Classic arcade breakout mechanics with angle reflections, power-up drops, and multi-tier brick destruction. Currently in development.
-                </p>
-                <div class="tech-tags">
-                    <span class="tag">In Development</span>
-                    <span class="tag">Canvas 2D</span>
-                </div>
-                <div class="play-button btn-disabled">
-                    <i class="fas fa-lock"></i> Coming Soon
-                </div>
-            </div>
+            <!-- 4. Neon Breakout -->
+            <a href="games/breaker/index.html" class="game-card-hub" data-id="breaker" data-cat="action" data-title="Neon Breakout" onmouseenter="ArcadeAudio.playClick()">
+                <div class="card-art-box">
+                    <div class="card-top-badges">
+                        <span class="diff-pill diff-hard">Laser Cannons</span>
+                        <button class="fav-toggle-btn" onclick="event.preventDefault(); toggleFav('breaker', this)" title="Bookmark"><i class="fas fa-heart"></i></button>
+                    </div>
+                    <!-- Custom SVG Art: Glass Bricks & Ball -->
+                    <svg viewBox="0 0 200 120" width="100%" height="100%">
+                        <rect x="25" y="20" width="32" height="12" rx="3" fill="#00f0ff" />
+                        <rect x="62" y="20" width="32" height="12" rx="3" fill="#ff007f" />
+                        <rect x="99" y="20" width="32" height="12" rx="3" fill="#ffd700" />
+                        <rect x="136" y="20" width="32" height="12" rx="3" fill="#a855f7" />
 
+                        <rect x="40" y="38" width="34" height="12" rx="3" fill="#ff007f" />
+                        <rect x="80" y="38" width="34" height="12" rx="3" fill="#00ff88" />
+                        <rect x="120" y="38" width="34" height="12" rx="3" fill="#00f0ff" />
+
+                        <!-- Ball -->
+                        <circle cx="95" cy="75" r="6" fill="#ffffff" stroke="#00f0ff" stroke-width="2" />
+                        <!-- Paddle -->
+                        <rect x="65" y="100" width="65" height="10" rx="5" fill="#00f0ff" stroke="#ffffff" stroke-width="1.5" />
+                    </svg>
+                </div>
+                <h2 class="card-title">Neon Breakout</h2>
+                <p class="card-desc">
+                    High-energy synthwave brick breaker with multi-hit glass durability, explosive bomb detonations, twin laser blasters, and 3 sectors.
+                </p>
+                <div class="card-stats-row">
+                    <span><i class="fas fa-trophy" style="color:var(--arcade-yellow);"></i> High Score</span>
+                    <span class="score-tag" id="hs_breaker">0</span>
+                </div>
+                <div class="card-play-btn">
+                    <i class="fas fa-play"></i> Play Neon Breakout
+                </div>
+            </a>
+
+        </div>
+
+        <!-- Empty Filter State -->
+        <div class="empty-search-state" id="emptyState">
+            <div class="empty-icon"><i class="fas fa-ghost"></i></div>
+            <h3 style="font-size:1.4rem; margin-bottom:0.5rem;">No Games Found</h3>
+            <p style="color:var(--arcade-text-dim); margin-bottom:1.5rem;">
+                No arcade game matched your query. Try searching for "Snake", "Bottle", "Treasure", or "Breakout".
+            </p>
+            <button class="arcade-btn arcade-btn-primary" onclick="resetFilters()">
+                <i class="fas fa-undo"></i> Reset Filters
+            </button>
         </div>
     </main>
 
     <!-- Footer -->
     <footer>
         <p>
-            Designed & Developed by Vaishnav Gupta (<a href="mailto:vaishnav.py@outlook.com">vaishnav.py@outlook.com</a>). Open source on <a href="https://github.com/vaishnavgupta07/arcade-games">GitHub</a>.
+            Engineered &amp; Designed by <strong>Vaishnav Gupta</strong> (<a href="mailto:vaishnav.py@outlook.com">vaishnav.py@outlook.com</a>).
+            <br>
+            Open Source on <a href="https://github.com/vaishnavgupta07/arcade-games" target="_blank" rel="noopener">GitHub</a> | Deployed on Vercel.
         </p>
     </footer>
 
+    <!-- Scripts -->
+    <script src="shared/arcade-core.js"></script>
+    <script>
+        let currentCat = 'all';
+
+        function loadStats() {
+            // Snake best score
+            const snakeBest = Math.max(
+                ArcadeStorage.getHighScore('snake_arcade', 0),
+                ArcadeStorage.getHighScore('snake_turbo', 0),
+                ArcadeStorage.getHighScore('snake_casual', 0),
+                parseInt(localStorage.getItem('snakeBestScore') || 0)
+            );
+            document.getElementById('hs_snake').innerText = `${snakeBest} pts`;
+
+            // Bottle best score
+            const bottleBest = Math.max(
+                ArcadeStorage.getHighScore('bottle_classic', 0),
+                ArcadeStorage.getHighScore('bottle_moving', 0),
+                parseInt(localStorage.getItem('bottleBestScore') || 0)
+            );
+            document.getElementById('hs_bottle').innerText = `${bottleBest} pts`;
+
+            // Treasure room
+            const treasureLvl = localStorage.getItem('arcade_treasure_level') || 1;
+            document.getElementById('hs_treasure').innerText = `Room ${treasureLvl}/10`;
+
+            // Breaker score
+            const breakerBest = ArcadeStorage.getHighScore('breaker', 0);
+            document.getElementById('hs_breaker').innerText = `${breakerBest} pts`;
+
+            // Mark favorites
+            document.querySelectorAll('.game-card-hub').forEach(card => {
+                const id = card.getAttribute('data-id');
+                const btn = card.querySelector('.fav-toggle-btn');
+                if (ArcadeStorage.isFavorite(id)) {
+                    btn.classList.add('favorited');
+                }
+            });
+        }
+
+        function toggleFav(id, btn) {
+            const isFav = ArcadeStorage.toggleFavorite(id);
+            btn.classList.toggle('favorited', isFav);
+            ArcadeAudio.playClick();
+        }
+
+        function filterCategory(cat) {
+            currentCat = cat;
+            document.querySelectorAll('.filter-chip').forEach(c => {
+                c.classList.toggle('active', c.getAttribute('data-cat') === cat);
+            });
+            handleSearch();
+            ArcadeAudio.playClick();
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const cards = document.querySelectorAll('.game-card-hub');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const title = card.getAttribute('data-title').toLowerCase();
+                const desc = card.querySelector('.card-desc').innerText.toLowerCase();
+                const cat = card.getAttribute('data-cat');
+
+                const matchesQuery = title.includes(query) || desc.includes(query);
+                const matchesCat = (currentCat === 'all') || (cat === currentCat);
+
+                if (matchesQuery && matchesCat) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            const emptyState = document.getElementById('emptyState');
+            if (visibleCount === 0) {
+                emptyState.classList.add('active');
+            } else {
+                emptyState.classList.remove('active');
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            filterCategory('all');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadStats);
+    </script>
 </body>
 </html>

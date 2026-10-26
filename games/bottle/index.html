@@ -1,285 +1,652 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bottle Flip Pro</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bottle Flip Pro | VG-Arcade</title>
+  <meta name="description" content="Realistic 2.5D physics bottle flipping simulator with dynamic fluid mechanics and streak multipliers by Vaishnav Gupta.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="top-bar">
-        <div class="score-board">
-            Score: <span id="scoreVal">0</span> | Best: <span id="bestScoreTop">0</span>
+  <!-- Top Arcade Header -->
+  <header class="arcade-header">
+    <a href="../../index.html" class="arcade-brand" title="Back to Arcade Zone">
+      <div class="arcade-brand-icon"><i class="fas fa-gamepad"></i></div>
+      <span>VG-ARCADE</span>
+    </a>
+
+    <div class="arcade-stats-bar">
+      <div class="arcade-badge arcade-badge-highlight">
+        <span>SCORE:</span> <span id="currentScore">0</span>
+      </div>
+      <div class="arcade-badge">
+        <i class="fas fa-fire" style="color:var(--arcade-pink);"></i>
+        <span>STREAK:</span> <span id="currentStreak">0</span>x
+      </div>
+      <div class="arcade-badge">
+        <i class="fas fa-trophy" style="color:var(--arcade-yellow);"></i>
+        <span>BEST:</span> <span id="bestScore">0</span>
+      </div>
+    </div>
+
+    <div class="arcade-actions">
+      <button class="arcade-btn arcade-btn-icon arcade-sound-btn" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
+        <i class="fas fa-volume-up"></i>
+      </button>
+      <a href="../../index.html" class="arcade-btn arcade-btn-danger" title="Exit to Hub">
+        <i class="fas fa-door-open"></i> <span class="hide-mobile">Exit</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Dynamic Streak Callout -->
+  <div class="streak-floater" id="streakBanner">🔥 2X COMBO!</div>
+
+  <!-- Instruction Guide -->
+  <div class="flip-guide" id="flipGuide">
+    <i class="fas fa-hand-pointer"></i>
+    <span>Hold mouse or touch to charge, release to flip!</span>
+  </div>
+
+  <!-- Power Gauge HUD -->
+  <div class="power-hud" id="powerHud">
+    <div class="power-label-row">
+      <span>FLIP TORQUE</span>
+      <span id="powerPercent">0%</span>
+    </div>
+    <div class="power-track">
+      <div class="sweet-spot-marker"></div>
+      <div class="power-fill" id="powerFill"></div>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Start Modal -->
+  <div class="arcade-modal-backdrop active" id="startModal">
+    <div class="arcade-modal-card">
+      <div class="game-badge-icon">🍾</div>
+      <h1 class="arcade-modal-title">BOTTLE FLIP PRO</h1>
+      <p class="arcade-modal-desc">
+        Master momentum, release at the sweet spot, and calculate rotational torque to land upright for massive combo streaks.
+      </p>
+
+      <div class="arcade-difficulty-tabs">
+        <button class="arcade-diff-btn active" data-mode="classic" onclick="setGameMode('classic')">Standard Stage</button>
+        <button class="arcade-diff-btn" data-mode="moving" onclick="setGameMode('moving')">Moving Platform</button>
+      </div>
+
+      <div class="arcade-stat-grid">
+        <div class="arcade-stat-item">
+          <div class="label">Best Score</div>
+          <div class="val highlight" id="modalBestDisplay">0</div>
         </div>
-        <a href="../../index.html" class="exit-btn">Exit Game</a>
-    </div>
-
-    <div class="instruction" id="instructionText">
-        Hold click/touch to charge power<br>Release to FLIP!
-    </div>
-
-    <!-- Power Bar Indicator -->
-    <div id="powerBarContainer">
-        <div id="powerBarFill"></div>
-    </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <!-- Game Over Modal -->
-    <div id="gameOverModal">
-        <h2>Bottle Fell! 💥</h2>
-        <p id="motivationalText"></p>
-        <div class="score-details">Score: <span id="finalScore">0</span></div>
-        <div class="score-details">Best Score: <span id="bestScoreDisplay">0</span></div>
-        
-        <div class="modal-btn-container">
-            <button class="modal-btn restart-btn" onclick="location.reload()">Try Again</button>
-            <a href="../../index.html" class="modal-btn exit-modal-btn">Exit</a>
+        <div class="arcade-stat-item">
+          <div class="label">Physics Engine</div>
+          <div class="val" style="color:var(--arcade-cyan);">Fluid 2.5D</div>
         </div>
+      </div>
+
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="startGame()">
+          <i class="fas fa-play"></i> START FLIPPING
+        </button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+  <!-- Game Over Modal -->
+  <div class="arcade-modal-backdrop" id="gameOverModal">
+    <div class="arcade-modal-card">
+      <h2 class="arcade-modal-title" id="gameOverTitle" style="color:var(--arcade-pink);">BOTTLE TOPPLED!</h2>
+      <p class="arcade-modal-desc" id="gameOverMsg">A slight miscalculation in angular torque.</p>
 
-        // Variables & Physics
-        let score = 0;
-        let bestScore = localStorage.getItem("bottleBestScore") || 0;
-        document.getElementById("bestScoreTop").innerText = bestScore;
+      <div class="arcade-stat-grid">
+        <div class="arcade-stat-item">
+          <div class="label">Final Score</div>
+          <div class="val highlight" id="finalScoreVal">0</div>
+        </div>
+        <div class="arcade-stat-item">
+          <div class="label">Best Score</div>
+          <div class="val" id="bestScoreVal">0</div>
+        </div>
+      </div>
 
-        const gravity = 0.6;
-        let state = "IDLE"; // IDLE, CHARGING, FLIPPING, GAMEOVER
-        let power = 0;
-        let maxPower = 25;
-        let powerDirection = 1;
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="restartGame()">
+          <i class="fas fa-redo"></i> TRY AGAIN
+        </button>
+        <a href="../../index.html" class="arcade-btn arcade-btn-ghost">
+          <i class="fas fa-home"></i> HUB
+        </a>
+      </div>
+    </div>
+  </div>
 
-        // Table / Platform details
-        const table = {
-            y: canvas.height * 0.75, // Table screen ke 75% height par hogi
-            height: canvas.height * 0.25
-        };
+  <script src="../../shared/arcade-core.js"></script>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-        // Bottle Object
-        const bottle = {
-            w: 40,
-            h: 100,
-            x: canvas.width / 2,
-            y: table.y - 100,
-            vy: 0, // Vertical velocity
-            angle: 0, // Rotation in degrees
-            vRot: 0 // Rotational velocity
-        };
+    // Game Mode & Stats
+    let gameMode = 'classic';
+    let score = 0;
+    let streak = 0;
+    let bestScore = 0;
+    let state = 'IDLE'; // IDLE, CHARGING, FLIPPING, LANDED, FALLEN, GAMEOVER
 
-        const powerBarContainer = document.getElementById("powerBarContainer");
-        const powerBarFill = document.getElementById("powerBarFill");
-        const instructionText = document.getElementById("instructionText");
+    // Physics
+    const GRAVITY = 0.58;
+    let power = 0;
+    let powerSpeed = 0.52;
+    let maxPower = 24;
+    let powerDir = 1;
 
-        // Input Listeners (Mouse & Touch)
-        function startCharge(e) {
-            if (e.type === 'touchstart') e.preventDefault();
-            if (state === "IDLE") {
-                state = "CHARGING";
-                power = 0;
-                powerDirection = 1;
-                powerBarContainer.style.display = "block";
-                instructionText.style.display = "none";
-            }
+    // Platform State
+    let platform = {
+      x: 0,
+      y: 0,
+      w: 220,
+      h: 24,
+      targetX: 0,
+      dir: 1,
+      speed: 1.5
+    };
+
+    // Bottle State
+    const bottle = {
+      w: 42,
+      h: 110,
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      angle: 0,
+      vRot: 0,
+      slosh: 0,      // Liquid slosh offset angle
+      vSlosh: 0      // Liquid slosh velocity
+    };
+
+    // Lights
+    let spotlightAngle = 0;
+
+    ArcadeStorage.recordPlay('bottle');
+
+    function updateHighScore() {
+      bestScore = ArcadeStorage.getHighScore(`bottle_${gameMode}`, 0);
+      document.getElementById("bestScore").innerText = bestScore;
+      document.getElementById("modalBestDisplay").innerText = bestScore;
+    }
+
+    function setGameMode(mode) {
+      gameMode = mode;
+      document.querySelectorAll(".arcade-diff-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-mode") === mode);
+      });
+      updateHighScore();
+      ArcadeAudio.playClick();
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      platform.y = canvas.height * 0.76;
+      if (state === 'IDLE' || state === 'CHARGING') {
+        platform.x = (canvas.width - platform.w) / 2;
+        bottle.x = platform.x + platform.w / 2;
+        bottle.y = platform.y - bottle.h;
+      }
+    }
+    window.addEventListener("resize", resizeCanvas);
+
+    function startGame() {
+      document.getElementById("startModal").classList.remove("active");
+      document.getElementById("gameOverModal").classList.remove("active");
+      score = 0;
+      streak = 0;
+      document.getElementById("currentScore").innerText = score;
+      document.getElementById("currentStreak").innerText = streak;
+      
+      resetToIdle();
+      state = 'IDLE';
+      updateHighScore();
+      ArcadeAudio.playClick();
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function resetToIdle() {
+      platform.x = (canvas.width - platform.w) / 2;
+      platform.y = canvas.height * 0.76;
+      bottle.x = platform.x + platform.w / 2;
+      bottle.y = platform.y - bottle.h;
+      bottle.vx = 0;
+      bottle.vy = 0;
+      bottle.angle = 0;
+      bottle.vRot = 0;
+      bottle.slosh = 0;
+      bottle.vSlosh = 0;
+      state = 'IDLE';
+    }
+
+    // --- INPUT HANDLING ---
+    function handleChargeStart(e) {
+      if (state !== 'IDLE') return;
+      if (e.target.closest('.arcade-header') || e.target.closest('.arcade-modal-backdrop')) return;
+      
+      state = 'CHARGING';
+      power = 0;
+      powerDir = 1;
+      document.getElementById("powerHud").classList.add("charging");
+      document.getElementById("flipGuide").style.opacity = '0';
+    }
+
+    function handleChargeEnd(e) {
+      if (state !== 'CHARGING') return;
+      state = 'FLIPPING';
+      document.getElementById("powerHud").classList.remove("charging");
+
+      // Calculate vertical and rotational impulses
+      const sweetRatio = power / maxPower;
+      bottle.vy = -power;
+      // Rotational torque tuned so sweet spot (~70%) yields ~360° rotation!
+      bottle.vRot = (power * 0.94) + 1.2;
+      bottle.vSlosh = -power * 0.15;
+
+      ArcadeAudio.playFlip();
+    }
+
+    window.addEventListener("mousedown", handleChargeStart);
+    window.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) handleChargeStart(e);
+    }, { passive: true });
+
+    window.addEventListener("mouseup", handleChargeEnd);
+    window.addEventListener("touchend", handleChargeEnd, { passive: true });
+
+    // Keyboard Spacebar
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && state === 'IDLE') {
+        e.preventDefault();
+        handleChargeStart(e);
+      }
+    });
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "Space" && state === 'CHARGING') {
+        e.preventDefault();
+        handleChargeEnd(e);
+      }
+    });
+
+    // --- GAME LOOP ---
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function update() {
+      spotlightAngle += 0.015;
+
+      // Platform movement if in moving mode
+      if (gameMode === 'moving' && (state === 'IDLE' || state === 'CHARGING')) {
+        platform.x += platform.speed * platform.dir;
+        const margin = 40;
+        if (platform.x < margin) {
+          platform.x = margin;
+          platform.dir = 1;
+        } else if (platform.x + platform.w > canvas.width - margin) {
+          platform.x = canvas.width - margin - platform.w;
+          platform.dir = -1;
+        }
+        bottle.x = platform.x + platform.w / 2;
+      }
+
+      // Charging Logic
+      if (state === 'CHARGING') {
+        power += powerSpeed * powerDir;
+        if (power >= maxPower) {
+          power = maxPower;
+          powerDir = -1;
+        } else if (power <= 0) {
+          power = 0;
+          powerDir = 1;
+        }
+        const pct = Math.round((power / maxPower) * 100);
+        document.getElementById("powerFill").style.width = `${pct}%`;
+        document.getElementById("powerPercent").innerText = `${pct}%`;
+
+        // Slight pre-jump bottle squash
+        bottle.slosh = Math.sin(Date.now() / 80) * 0.15;
+      }
+
+      // Flipping Physics
+      if (state === 'FLIPPING') {
+        bottle.vy += GRAVITY;
+        bottle.y += bottle.vy;
+        bottle.angle += bottle.vRot;
+
+        // Fluid physics simulation inside bottle
+        const targetSlosh = -(bottle.vRot * 0.04);
+        bottle.vSlosh += (targetSlosh - bottle.slosh) * 0.12;
+        bottle.vSlosh *= 0.92; // Damping
+        bottle.slosh += bottle.vSlosh;
+
+        // Check platform contact
+        const targetFloor = platform.y - bottle.h;
+        if (bottle.y >= targetFloor && bottle.vy > 0) {
+          bottle.y = targetFloor;
+          evaluateLanding();
+        }
+      }
+    }
+
+    function evaluateLanding() {
+      // Normalize angle to [0, 360)
+      let normAngle = ((bottle.angle % 360) + 360) % 360;
+
+      // Upright tolerance (within 24 degrees of upright 0/360)
+      const isUpright = (normAngle <= 24 || normAngle >= 336);
+
+      // Check if within platform horizontal bounds
+      const onPlatform = (bottle.x >= platform.x + 10 && bottle.x <= platform.x + platform.w - 10);
+
+      if (isUpright && onPlatform) {
+        // SUCCESSFUL LANDING!
+        state = 'LANDED';
+        bottle.angle = 0;
+        bottle.vy = 0;
+        bottle.vRot = 0;
+        streak++;
+
+        const multiplier = Math.min(streak, 5);
+        const pts = 10 * multiplier;
+        score += pts;
+
+        document.getElementById("currentScore").innerText = score;
+        document.getElementById("currentStreak").innerText = streak;
+
+        ArcadeAudio.playLand();
+        if (streak > 1) {
+          ArcadeAudio.playEat();
+          showStreakBanner(`🔥 ${streak}X STREAK! +${pts} PTS`);
         }
 
-        function releaseFlip(e) {
-            if (e.type === 'touchend') e.preventDefault();
-            if (state === "CHARGING") {
-                state = "FLIPPING";
-                powerBarContainer.style.display = "none";
-                
-                // Jump physics apply karna
-                bottle.vy = -power; // Upar ki taraf uchhalna
-                bottle.vRot = power * 0.8; // Ghoomne ki speed (power pe depend karegi)
-            }
+        ArcadeFX.burst(bottle.x, platform.y, 20, ['#00f0ff', '#ffd700', '#00ff88']);
+
+        setTimeout(() => {
+          if (state === 'LANDED') {
+            state = 'IDLE';
+            document.getElementById("flipGuide").style.opacity = '1';
+          }
+        }, 500);
+
+      } else {
+        // TOPPLE / MISS
+        state = 'FALLEN';
+        bottle.angle = (normAngle > 90 && normAngle < 270) ? 180 : (normAngle < 180 ? 90 : -90);
+        bottle.y = platform.y - bottle.w / 2;
+        ArcadeAudio.playGameOver();
+
+        setTimeout(() => {
+          triggerGameOver();
+        }, 600);
+      }
+    }
+
+    function showStreakBanner(text) {
+      const el = document.getElementById("streakBanner");
+      el.innerText = text;
+      el.classList.add("active");
+      setTimeout(() => el.classList.remove("active"), 1600);
+    }
+
+    function triggerGameOver() {
+      state = 'GAMEOVER';
+      const isNewBest = ArcadeStorage.setHighScore(`bottle_${gameMode}`, score);
+      updateHighScore();
+
+      document.getElementById("finalScoreVal").innerText = score;
+      document.getElementById("bestScoreVal").innerText = bestScore;
+
+      const titleEl = document.getElementById("gameOverTitle");
+      const msgEl = document.getElementById("gameOverMsg");
+
+      if (isNewBest && score > 0) {
+        titleEl.innerText = "NEW BEST RECORD! 🏆";
+        titleEl.style.color = "var(--arcade-yellow)";
+        msgEl.innerText = `Incredible focus! You achieved a record score of ${score} pts.`;
+        ArcadeFX.confetti();
+      } else {
+        titleEl.innerText = "BOTTLE FELL!";
+        titleEl.style.color = "var(--arcade-pink)";
+        msgEl.innerText = `Final Score: ${score} points | Max Streak: ${streak}x`;
+      }
+
+      document.getElementById("gameOverModal").classList.add("active");
+    }
+
+    // --- RENDERING ---
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Arena Background Gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bgGrad.addColorStop(0, "#080c16");
+      bgGrad.addColorStop(0.65, "#101728");
+      bgGrad.addColorStop(1, "#070a12");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Animated Overhead Stage Spotlights
+      ctx.save();
+      const spotGrad1 = ctx.createRadialGradient(
+        canvas.width * 0.3 + Math.sin(spotlightAngle) * 80, 0, 10,
+        canvas.width * 0.4, canvas.height * 0.8, canvas.width * 0.5
+      );
+      spotGrad1.addColorStop(0, "rgba(0, 240, 255, 0.12)");
+      spotGrad1.addColorStop(1, "transparent");
+      ctx.fillStyle = spotGrad1;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const spotGrad2 = ctx.createRadialGradient(
+        canvas.width * 0.7 - Math.sin(spotlightAngle) * 80, 0, 10,
+        canvas.width * 0.6, canvas.height * 0.8, canvas.width * 0.5
+      );
+      spotGrad2.addColorStop(0, "rgba(255, 0, 127, 0.1)");
+      spotGrad2.addColorStop(1, "transparent");
+      ctx.fillStyle = spotGrad2;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      // Perspective Grid Lines on Floor
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.06)";
+      ctx.lineWidth = 1;
+      const floorY = platform.y + 15;
+      for (let x = 0; x <= canvas.width; x += 60) {
+        ctx.beginPath();
+        ctx.moveTo(x, floorY);
+        ctx.lineTo(x + (x - canvas.width / 2) * 0.5, canvas.height);
+        ctx.stroke();
+      }
+
+      // Draw Platform Podia
+      drawPlatform();
+
+      // Draw Trajectory Prediction Dots while Charging
+      if (state === 'CHARGING' && power > 2) {
+        drawTrajectoryPreview();
+      }
+
+      // Draw Bottle Shadow
+      drawBottleShadow();
+
+      // Draw 2.5D Bottle with Fluid Simulation
+      drawBottle();
+    }
+
+    function drawPlatform() {
+      // Glow under platform
+      ctx.shadowColor = "rgba(0, 240, 255, 0.4)";
+      ctx.shadowBlur = 20;
+
+      // Platform Base
+      ctx.fillStyle = "#162035";
+      ctx.beginPath();
+      ctx.roundRect(platform.x, platform.y, platform.w, platform.h, [4, 4, 12, 12]);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Platform Top Surface Highlight
+      const topGrad = ctx.createLinearGradient(platform.x, platform.y, platform.x + platform.w, platform.y);
+      topGrad.addColorStop(0, "#00f0ff");
+      topGrad.addColorStop(0.5, "#a5b4fc");
+      topGrad.addColorStop(1, "#ff007f");
+      ctx.fillStyle = topGrad;
+      ctx.beginPath();
+      ctx.roundRect(platform.x, platform.y, platform.w, 6, [4, 4, 0, 0]);
+      ctx.fill();
+
+      // Center Bullseye Target Marker
+      const midX = platform.x + platform.w / 2;
+      ctx.fillStyle = "rgba(0, 240, 255, 0.25)";
+      ctx.beginPath();
+      ctx.roundRect(midX - 25, platform.y + 2, 50, 4, 2);
+      ctx.fill();
+    }
+
+    function drawTrajectoryPreview() {
+      ctx.save();
+      let simX = bottle.x;
+      let simY = bottle.y;
+      let simVy = -power;
+      ctx.fillStyle = "rgba(0, 240, 255, 0.5)";
+
+      for (let t = 0; t < 18; t++) {
+        simVy += GRAVITY;
+        simY += simVy;
+        if (t % 3 === 0 && simY < platform.y) {
+          ctx.beginPath();
+          ctx.arc(simX, simY + bottle.h / 2, 3 - t * 0.1, 0, Math.PI * 2);
+          ctx.fill();
         }
+      }
+      ctx.restore();
+    }
 
-        window.addEventListener("mousedown", startCharge);
-        window.addEventListener("touchstart", startCharge, {passive: false});
-        window.addEventListener("mouseup", releaseFlip);
-        window.addEventListener("touchend", releaseFlip, {passive: false});
+    function drawBottleShadow() {
+      const distFromFloor = Math.max(0, platform.y - (bottle.y + bottle.h));
+      const scale = Math.max(0.3, 1 - distFromFloor / 300);
+      const alpha = Math.max(0.05, 0.4 - distFromFloor / 500);
 
-        // Game Loop
-        function update() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+      ctx.beginPath();
+      ctx.ellipse(bottle.x, platform.y + 2, (bottle.w / 2 + 5) * scale, 5 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
-            // Draw Background Room (Simple gradient)
-            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, "#34495e");
-            gradient.addColorStop(1, "#2c3e50");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    function drawBottle() {
+      ctx.save();
+      // Pivot around bottle center
+      ctx.translate(bottle.x, bottle.y + bottle.h / 2);
+      ctx.rotate((bottle.angle * Math.PI) / 180);
 
-            // Draw Table
-            ctx.fillStyle = "#8e44ad"; // Purple table for arcade look
-            ctx.fillRect(0, table.y, canvas.width, table.height);
-            ctx.fillStyle = "#9b59b6"; // Table top highlight
-            ctx.fillRect(0, table.y, canvas.width, 10);
+      const hw = bottle.w / 2;
+      const hh = bottle.h / 2;
 
-            // Charging Logic
-            if (state === "CHARGING") {
-                power += 0.5 * powerDirection;
-                if (power >= maxPower || power <= 0) {
-                    powerDirection *= -1; // Bar full hone par wapas reverse aayega
-                }
-                powerBarFill.style.width = (power / maxPower) * 100 + "%";
-            }
+      // 1. Bottle Body Glass (Translucent)
+      ctx.fillStyle = "rgba(220, 245, 255, 0.2)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+      ctx.lineWidth = 2;
 
-            // Flipping Physics Logic
-            if (state === "FLIPPING") {
-                bottle.vy += gravity; // Gravity apply
-                bottle.y += bottle.vy;
-                bottle.angle += bottle.vRot; // Rotate
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh + 20, bottle.w, bottle.h - 20, [4, 4, 8, 8]);
+      ctx.fill();
+      ctx.stroke();
 
-                // Collision with table check
-                if (bottle.y >= table.y - bottle.h) {
-                    bottle.y = table.y - bottle.h; // Table par set karo
-                    checkLanding();
-                }
-            }
+      // 2. Sloshing Fluid (Simulated Water)
+      ctx.save();
+      // Clip to bottle interior
+      ctx.beginPath();
+      ctx.roundRect(-hw + 2, -hh + 22, bottle.w - 4, bottle.h - 24, [2, 2, 6, 6]);
+      ctx.clip();
 
-            // Draw Bottle
-            ctx.save();
-            // Origin point ko bottle ke center me set karna taki wo center se ghoome
-            ctx.translate(bottle.x, bottle.y + bottle.h / 2);
-            ctx.rotate((bottle.angle * Math.PI) / 180);
+      // Water fill polygon with dynamic tilt angle
+      ctx.fillStyle = "rgba(0, 210, 255, 0.75)";
+      const liquidHeight = bottle.h * 0.48;
+      const sloshTilt = Math.tan(bottle.slosh) * hw;
 
-            // Draw Bottle Body
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 2;
-            
-            // Bottle shape (Rectangle with rounded bottom)
-            ctx.beginPath();
-            ctx.roundRect(-bottle.w / 2, -bottle.h / 2, bottle.w, bottle.h, 5);
-            ctx.fill();
-            ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-hw, hh); // Bottom left
+      ctx.lineTo(hw, hh);   // Bottom right
+      ctx.lineTo(hw, hh - liquidHeight + sloshTilt); // Surface right
+      ctx.lineTo(-hw, hh - liquidHeight - sloshTilt); // Surface left
+      ctx.closePath();
+      ctx.fill();
 
-            // Draw Water inside bottle (Blue)
-            ctx.fillStyle = "rgba(52, 152, 219, 0.8)";
-            ctx.beginPath();
-            ctx.roundRect(-bottle.w / 2, 0, bottle.w, bottle.h / 2, [0, 0, 5, 5]);
-            ctx.fill();
+      // Water surface shine
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-hw, hh - liquidHeight - sloshTilt);
+      ctx.lineTo(hw, hh - liquidHeight + sloshTilt);
+      ctx.stroke();
 
-            // Draw Bottle Cap
-            ctx.fillStyle = "#e74c3c"; // Red cap
-            ctx.fillRect(-bottle.w / 4, -bottle.h / 2 - 10, bottle.w / 2, 10);
+      ctx.restore(); // End fluid clip
 
-            ctx.restore();
+      // 3. Bottle Neck & Lip
+      ctx.fillStyle = "rgba(220, 245, 255, 0.3)";
+      ctx.beginPath();
+      ctx.roundRect(-hw * 0.45, -hh, bottle.w * 0.45, 20, [3, 3, 0, 0]);
+      ctx.fill();
+      ctx.stroke();
 
-            if (state !== "GAMEOVER") {
-                requestAnimationFrame(update);
-            }
-        }
+      // 4. Bottle Cap (Vibrant Neon Red/Pink)
+      ctx.fillStyle = "#ff007f";
+      ctx.shadowColor = "#ff007f";
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(-hw * 0.48, -hh - 8, bottle.w * 0.48, 8, 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
-        // Win/Loss Calculation
-        function checkLanding() {
-            // Angle ko 0-360 ke beech me lana
-            let finalAngle = Math.abs(bottle.angle % 360);
+      // 5. Bottle Label
+      ctx.fillStyle = "rgba(15, 20, 31, 0.85)";
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.6)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(-hw + 3, -8, bottle.w - 6, 26, 3);
+      ctx.fill();
+      ctx.stroke();
 
-            // Perfect landing condition (straight upright)
-            if (finalAngle <= 25 || finalAngle >= 335) {
-                // WIN!
-                score++;
-                document.getElementById("scoreVal").innerText = score;
-                
-                // Snap bottle back to perfect straight
-                bottle.angle = 0;
-                bottle.y = table.y - bottle.h;
-                
-                state = "IDLE";
-                instructionText.innerHTML = "Perfect! 👏<br>Tap to flip again.";
-                instructionText.style.display = "block";
-            } else {
-                // LOSE! (Bottle giri hui draw hogi)
-                state = "GAMEOVER";
-                
-                // Snap it to fallen down horizontally
-                bottle.angle = (finalAngle > 90 && finalAngle < 270) ? 180 : 90;
-                bottle.y = table.y - bottle.w/2; // Laying flat
-                drawFinalFallenState(); // Draw one last time
-                
-                setTimeout(showGameOverMenu, 500);
-            }
-        }
+      ctx.fillStyle = "#00f0ff";
+      ctx.font = "bold 9px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("VG", 0, 5);
 
-        function drawFinalFallenState() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, "#34495e");
-            gradient.addColorStop(1, "#2c3e50");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 6. Glass Specular Edge Reflection
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-hw + 4, -hh + 26);
+      ctx.lineTo(-hw + 4, hh - 12);
+      ctx.stroke();
 
-            ctx.fillStyle = "#8e44ad"; 
-            ctx.fillRect(0, table.y, canvas.width, table.height);
-            ctx.fillStyle = "#9b59b6"; 
-            ctx.fillRect(0, table.y, canvas.width, 10);
+      ctx.restore();
+    }
 
-            ctx.save();
-            ctx.translate(bottle.x, table.y - bottle.w/2);
-            ctx.rotate((90 * Math.PI) / 180);
-
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.roundRect(-bottle.w / 2, -bottle.h / 2, bottle.w, bottle.h, 5);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "rgba(52, 152, 219, 0.8)";
-            ctx.beginPath();
-            ctx.roundRect(-bottle.w / 2, 0, bottle.w, bottle.h / 2, [0, 0, 5, 5]);
-            ctx.fill();
-
-            ctx.fillStyle = "#e74c3c";
-            ctx.fillRect(-bottle.w / 4, -bottle.h / 2 - 10, bottle.w / 2, 10);
-            ctx.restore();
-        }
-
-        function showGameOverMenu() {
-            let textElement = document.getElementById("motivationalText");
-            
-            if (score > bestScore) {
-                bestScore = score;
-                localStorage.setItem("bottleBestScore", bestScore); 
-                textElement.innerText = "Awesome! New High Score! 🎉";
-                textElement.style.color = "#27ae60";
-            } else {
-                textElement.innerText = "Oops! Timing is everything. Your best is " + bestScore + " 💪";
-            }
-            
-            document.getElementById("finalScore").innerText = score;
-            document.getElementById("bestScoreDisplay").innerText = bestScore;
-            
-            document.getElementById("gameCanvas").style.filter = "blur(3px)";
-            document.getElementById("gameOverModal").style.display = "block";
-        }
-
-        // Adjust canvas on resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            bottle.x = canvas.width / 2;
-            table.y = canvas.height * 0.75;
-            table.height = canvas.height * 0.25;
-            if(state === "IDLE") {
-                bottle.y = table.y - bottle.h;
-            }
-        });
-
-        // Start animation
-        update();
-
-    </script>
+    // Init & Start Loop
+    resizeCanvas();
+    updateHighScore();
+    loop();
+  </script>
 </body>
 </html>

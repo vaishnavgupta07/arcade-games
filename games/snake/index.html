@@ -3,274 +3,677 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Snake Game Pro</title>
+  <title>Cyber Snake Pro | VG-Arcade</title>
+  <meta name="description" content="High-octane neon cyber snake arcade game with fluid controls, input buffering, and particle physics by Vaishnav Gupta.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  
-  <div class="top-bar">
-      <div class="score-board">
-          Score: <span id="scoreVal">0</span> | Best: <span id="bestScoreTop">0</span>
+
+  <!-- Top Arcade Header -->
+  <header class="arcade-header">
+    <a href="../../index.html" class="arcade-brand" title="Back to Arcade Zone">
+      <div class="arcade-brand-icon"><i class="fas fa-gamepad"></i></div>
+      <span>VG-ARCADE</span>
+    </a>
+
+    <div class="arcade-stats-bar">
+      <div class="arcade-badge arcade-badge-highlight">
+        <span>SCORE:</span> <span id="currentScore">0</span>
       </div>
-      <div class="btn-group">
-          <button id="pauseBtn" class="action-btn pause-btn" onclick="togglePause()">Pause</button>
-          <a href="../../index.html" class="action-btn exit-btn">Exit</a>
+      <div class="arcade-badge">
+        <i class="fas fa-trophy" style="color:var(--arcade-yellow);"></i>
+        <span>BEST:</span> <span id="bestScore">0</span>
       </div>
+    </div>
+
+    <div class="arcade-actions">
+      <button class="arcade-btn arcade-btn-icon arcade-sound-btn" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
+        <i class="fas fa-volume-up"></i>
+      </button>
+      <button id="pauseToggleBtn" class="arcade-btn arcade-btn-ghost" onclick="togglePause()">
+        <i class="fas fa-pause"></i> <span class="hide-mobile">Pause</span>
+      </button>
+      <a href="../../index.html" class="arcade-btn arcade-btn-danger" title="Exit to Hub">
+        <i class="fas fa-door-open"></i> <span class="hide-mobile">Exit</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Game Shell -->
+  <main class="game-container">
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <canvas id="gameCanvas" width="600" height="600"></canvas>
+      <div class="combo-display" id="bonusBanner">⚡ BONUS ACTIVE!</div>
+    </div>
+
+    <!-- Desktop Controls Tip -->
+    <div class="controls-hint">
+      <span><span class="key-pill">W</span><span class="key-pill">A</span><span class="key-pill">S</span><span class="key-pill">D</span> or <span class="key-pill">▲</span><span class="key-pill">▼</span><span class="key-pill">◄</span><span class="key-pill">►</span> Steer</span>
+      <span><span class="key-pill">SPACE</span> Pause</span>
+      <span><span class="key-pill">R</span> Restart</span>
+    </div>
+
+    <!-- Mobile Arcade D-Pad -->
+    <div class="mobile-controls">
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpadUp" aria-label="Up"><i class="fas fa-chevron-up"></i></button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpadLeft" aria-label="Left"><i class="fas fa-chevron-left"></i></button>
+        <button class="dpad-btn" id="dpadDown" aria-label="Down"><i class="fas fa-chevron-down"></i></button>
+        <button class="dpad-btn" id="dpadRight" aria-label="Right"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Start Screen Modal -->
+  <div class="arcade-modal-backdrop active" id="startModal">
+    <div class="arcade-modal-card">
+      <div class="game-badge-icon">🐍</div>
+      <h1 class="arcade-modal-title">CYBER SNAKE</h1>
+      <p class="arcade-modal-desc">
+        Navigate the neon grid, absorb cyber energy cores, and avoid colliding with walls or your own trail.
+      </p>
+
+      <div class="arcade-difficulty-tabs">
+        <button class="arcade-diff-btn" data-diff="casual" onclick="selectDifficulty('casual')">Casual (Wrap)</button>
+        <button class="arcade-diff-btn active" data-diff="arcade" onclick="selectDifficulty('arcade')">Classic Arcade</button>
+        <button class="arcade-diff-btn" data-diff="turbo" onclick="selectDifficulty('turbo')">Cyber Rush (2x)</button>
+      </div>
+
+      <div class="arcade-stat-grid">
+        <div class="arcade-stat-item">
+          <div class="label">Difficulty Best</div>
+          <div class="val highlight" id="modalBestDisplay">0</div>
+        </div>
+        <div class="arcade-stat-item">
+          <div class="label">Speed Rating</div>
+          <div class="val" id="modalSpeedDisplay">Arcade</div>
+        </div>
+      </div>
+
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="startGame()">
+          <i class="fas fa-play"></i> LAUNCH GAME
+        </button>
+      </div>
+    </div>
   </div>
 
-  <!-- Mobile On-Screen Controls -->
-  <div class="mobile-dpad">
-      <div class="dpad-btn" id="btnUp">⬆️</div>
-      <div class="dpad-middle">
-          <div class="dpad-btn" id="btnLeft">⬅️</div>
-          <div class="dpad-btn" id="btnRight">➡️</div>
+  <!-- Pause Modal -->
+  <div class="arcade-modal-backdrop" id="pauseModal">
+    <div class="arcade-modal-card">
+      <h2 class="arcade-modal-title"><i class="fas fa-pause-circle"></i> PAUSED</h2>
+      <p class="arcade-modal-desc">Systems suspended. Take a breather!</p>
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="togglePause()">
+          <i class="fas fa-play"></i> RESUME
+        </button>
+        <button class="arcade-btn arcade-btn-ghost" onclick="restartGame()">
+          <i class="fas fa-redo"></i> RESTART
+        </button>
       </div>
-      <div class="dpad-btn" id="btnDown">⬇️</div>
+    </div>
   </div>
 
-  <div id="gameOverModal">
-      <h2>Game Over! 🐍</h2>
-      <p id="motivationalText"></p>
-      <div class="score-details">Score: <span id="finalScore">0</span></div>
-      <div class="score-details">Best Score: <span id="bestScoreDisplay">0</span></div>
-      
-      <div class="modal-btn-container">
-          <button class="modal-btn restart-btn" onclick="location.reload()">Restart</button>
-          <a href="../../index.html" class="modal-btn exit-modal-btn">Exit</a>
+  <!-- Game Over Modal -->
+  <div class="arcade-modal-backdrop" id="gameOverModal">
+    <div class="arcade-modal-card">
+      <h2 class="arcade-modal-title" id="gameOverTitle" style="color:var(--arcade-pink);">CIRCUIT CRASH</h2>
+      <p class="arcade-modal-desc" id="gameOverMsg">Signal disconnected!</p>
+
+      <div class="arcade-stat-grid">
+        <div class="arcade-stat-item">
+          <div class="label">Final Score</div>
+          <div class="val highlight" id="finalScoreVal">0</div>
+        </div>
+        <div class="arcade-stat-item">
+          <div class="label">High Score</div>
+          <div class="val" id="bestScoreVal">0</div>
+        </div>
       </div>
+
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="restartGame()">
+          <i class="fas fa-redo"></i> PLAY AGAIN
+        </button>
+        <a href="../../index.html" class="arcade-btn arcade-btn-ghost">
+          <i class="fas fa-home"></i> HUB
+        </a>
+      </div>
+    </div>
   </div>
 
-  <canvas id="gameCanvas"></canvas>
-
+  <!-- Scripts -->
+  <script src="../../shared/arcade-core.js"></script>
   <script>
+    // --- GAME CONSTANTS & STATE ---
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
 
-    let box = 25; 
-    let cols = Math.floor(canvas.width / box);
-    let rows = Math.floor(canvas.height / box);
+    const GRID_SIZE = 24; // 24x24 grid cells
+    const CELL_SIZE = canvas.width / GRID_SIZE; // 25px per cell
 
-    let snake = [];
-    snake[0] = { x: Math.floor(cols / 2) * box, y: Math.floor(rows / 2) * box };
-
+    let difficulty = 'arcade';
+    let tickSpeed = 105;
     let score = 0;
-    let bestScore = localStorage.getItem("snakeBestScore") || 0;
-    document.getElementById("bestScoreTop").innerText = bestScore;
-
-    let food = generateFood(); 
-    let d = "RIGHT";
-    let speed = 200; 
-    let game; 
-    
+    let scoreMultiplier = 1;
+    let snake = [];
+    let dir = { x: 1, y: 0 };
+    let inputQueue = [];
+    let food = { x: 5, y: 5, pulse: 0 };
+    let bonusFood = null;
+    let bonusTimer = null;
+    let gameLoop = null;
+    let isPlaying = false;
     let isPaused = false;
-    let isGameOver = false;
+    let particleSparks = [];
 
-    function generateFood() {
-        let valid = false;
-        let foodX, foodY;
-        while (!valid) {
-            let fx = Math.floor(Math.random() * cols);
-            let fy = Math.floor(Math.random() * rows);
-            
-            let onSnake = false;
-            for (let i = 0; i < snake.length; i++) {
-                if (snake[i].x === fx * box && snake[i].y === fy * box) {
-                    onSnake = true;
-                    break;
-                }
-            }
-            if (onSnake) continue;
-            valid = true;
-            foodX = fx * box;
-            foodY = fy * box;
+    // Audio tracking
+    ArcadeStorage.recordPlay('snake');
+
+    function getStorageKey() {
+      return `snake_${difficulty}`;
+    }
+
+    function updateHighScoreDisplay() {
+      const best = ArcadeStorage.getHighScore(getStorageKey(), 0);
+      document.getElementById("bestScore").innerText = best;
+      document.getElementById("modalBestDisplay").innerText = best;
+      return best;
+    }
+
+    function selectDifficulty(diff) {
+      difficulty = diff;
+      document.querySelectorAll(".arcade-diff-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-diff") === diff);
+      });
+
+      const speedLabel = document.getElementById("modalSpeedDisplay");
+      if (diff === 'casual') {
+        tickSpeed = 140;
+        scoreMultiplier = 1;
+        speedLabel.innerText = 'Casual';
+      } else if (diff === 'turbo') {
+        tickSpeed = 68;
+        scoreMultiplier = 2;
+        speedLabel.innerText = '2x Turbo';
+      } else {
+        tickSpeed = 100;
+        scoreMultiplier = 1;
+        speedLabel.innerText = 'Arcade';
+      }
+      updateHighScoreDisplay();
+      ArcadeAudio.playClick();
+    }
+
+    // --- GAME ENGINE ---
+    function initGame() {
+      const mid = Math.floor(GRID_SIZE / 2);
+      snake = [
+        { x: mid, y: mid },
+        { x: mid - 1, y: mid },
+        { x: mid - 2, y: mid }
+      ];
+      dir = { x: 1, y: 0 };
+      inputQueue = [];
+      score = 0;
+      particleSparks = [];
+      document.getElementById("currentScore").innerText = score;
+      document.getElementById("bonusBanner").classList.remove("visible");
+      
+      if (bonusTimer) clearTimeout(bonusTimer);
+      bonusFood = null;
+
+      spawnFood();
+      updateHighScoreDisplay();
+    }
+
+    function spawnFood() {
+      let valid = false;
+      while (!valid) {
+        const fx = Math.floor(Math.random() * GRID_SIZE);
+        const fy = Math.floor(Math.random() * GRID_SIZE);
+        const occupied = snake.some(s => s.x === fx && s.y === fy);
+        if (!occupied) {
+          food = { x: fx, y: fy, pulse: 0 };
+          valid = true;
         }
-        return { x: foodX, y: foodY };
+      }
+
+      // 20% chance to spawn a timed bonus orb if none exists
+      if (!bonusFood && Math.random() < 0.25 && score > 3) {
+        spawnBonusFood();
+      }
+    }
+
+    function spawnBonusFood() {
+      let valid = false;
+      while (!valid) {
+        const bx = Math.floor(Math.random() * GRID_SIZE);
+        const by = Math.floor(Math.random() * GRID_SIZE);
+        const occupied = (food.x === bx && food.y === by) || snake.some(s => s.x === bx && s.y === by);
+        if (!occupied) {
+          bonusFood = { x: bx, y: by, expire: Date.now() + 8000 };
+          document.getElementById("bonusBanner").classList.add("visible");
+          valid = true;
+        }
+      }
+      bonusTimer = setTimeout(() => {
+        bonusFood = null;
+        document.getElementById("bonusBanner").classList.remove("visible");
+      }, 8000);
+    }
+
+    function startGame() {
+      document.getElementById("startModal").classList.remove("active");
+      initGame();
+      isPlaying = true;
+      isPaused = false;
+      if (gameLoop) clearInterval(gameLoop);
+      gameLoop = setInterval(tick, tickSpeed);
+      ArcadeAudio.playClick();
+    }
+
+    function restartGame() {
+      document.getElementById("gameOverModal").classList.remove("active");
+      document.getElementById("pauseModal").classList.remove("active");
+      startGame();
     }
 
     function togglePause() {
-        if (isGameOver || countdown >= 0) return;
-        isPaused = !isPaused;
-        let pauseBtn = document.getElementById("pauseBtn");
+      if (!isPlaying) return;
+      isPaused = !isPaused;
+      const pauseModal = document.getElementById("pauseModal");
+      const pauseBtn = document.getElementById("pauseToggleBtn");
 
-        if (isPaused) {
-            clearInterval(game);
-            pauseBtn.innerText = "Resume";
-            pauseBtn.style.background = "#FF9800";
-            
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#1b5e20";
-            ctx.font = "bold 50px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
-        } else {
-            pauseBtn.innerText = "Pause";
-            pauseBtn.style.background = "#2196F3";
-            game = setInterval(draw, speed);
-        }
+      if (isPaused) {
+        clearInterval(gameLoop);
+        pauseModal.classList.add("active");
+        pauseBtn.innerHTML = '<i class="fas fa-play"></i> <span class="hide-mobile">Resume</span>';
+      } else {
+        pauseModal.classList.remove("active");
+        pauseBtn.innerHTML = '<i class="fas fa-pause"></i> <span class="hide-mobile">Pause</span>';
+        gameLoop = setInterval(tick, tickSpeed);
+      }
+      ArcadeAudio.playClick();
     }
 
-    // --- KEYBOARD CONTROLS (For PC) ---
-    document.addEventListener("keydown", function(event) {
-        if(event.keyCode == 32) { togglePause(); return; }
-        if (isPaused) return;
+    // --- INPUT QUEUE HANDLING (Fixes 180° bug) ---
+    function queueDirection(nx, ny) {
+      if (isPaused || !isPlaying) return;
+      
+      const lastPlanned = inputQueue.length > 0 ? inputQueue[inputQueue.length - 1] : dir;
+      // Prevent 180° turn into self
+      if (nx === -lastPlanned.x && ny === -lastPlanned.y) return;
+      // Prevent redundant same direction
+      if (nx === lastPlanned.x && ny === lastPlanned.y) return;
 
-        if(event.keyCode == 37 && d != "RIGHT") d = "LEFT";
-        else if(event.keyCode == 38 && d != "DOWN") d = "UP";
-        else if(event.keyCode == 39 && d != "LEFT") d = "RIGHT";
-        else if(event.keyCode == 40 && d != "UP") d = "DOWN";
+      if (inputQueue.length < 2) {
+        inputQueue.push({ x: nx, y: ny });
+      }
+    }
+
+    // --- TICK LOOP ---
+    function tick() {
+      if (inputQueue.length > 0) {
+        const next = inputQueue.shift();
+        // Double safety check
+        if (!(next.x === -dir.x && next.y === -dir.y)) {
+          dir = next;
+        }
+      }
+
+      let nextX = snake[0].x + dir.x;
+      let nextY = snake[0].y + dir.y;
+
+      // Casual mode wall-wrap vs Classic collision
+      if (difficulty === 'casual') {
+        if (nextX < 0) nextX = GRID_SIZE - 1;
+        if (nextX >= GRID_SIZE) nextX = 0;
+        if (nextY < 0) nextY = GRID_SIZE - 1;
+        if (nextY >= GRID_SIZE) nextY = 0;
+      } else {
+        if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
+          triggerGameOver("Boundary Collision!");
+          return;
+        }
+      }
+
+      // Check self-collision
+      for (let i = 0; i < snake.length; i++) {
+        if (snake[i].x === nextX && snake[i].y === nextY) {
+          triggerGameOver("Self Collision!");
+          return;
+        }
+      }
+
+      // Move snake head
+      snake.unshift({ x: nextX, y: nextY });
+
+      // Check food consumption
+      if (nextX === food.x && nextY === food.y) {
+        score += 1 * scoreMultiplier;
+        document.getElementById("currentScore").innerText = score;
+        ArcadeAudio.playEat();
+        createEatSparks(food.x * CELL_SIZE + CELL_SIZE / 2, food.y * CELL_SIZE + CELL_SIZE / 2, '#00f0ff');
+        spawnFood();
+
+        // Progressive acceleration for Classic Arcade
+        if (difficulty === 'arcade' && tickSpeed > 55) {
+          tickSpeed -= 1.5;
+          clearInterval(gameLoop);
+          gameLoop = setInterval(tick, tickSpeed);
+        }
+      } else if (bonusFood && nextX === bonusFood.x && nextY === bonusFood.y) {
+        score += 5 * scoreMultiplier;
+        document.getElementById("currentScore").innerText = score;
+        ArcadeAudio.playBonus();
+        createEatSparks(bonusFood.x * CELL_SIZE + CELL_SIZE / 2, bonusFood.y * CELL_SIZE + CELL_SIZE / 2, '#ffd700');
+        clearTimeout(bonusTimer);
+        bonusFood = null;
+        document.getElementById("bonusBanner").classList.remove("visible");
+      } else {
+        snake.pop(); // Remove tail
+      }
+
+      draw();
+    }
+
+    // --- GRAPHICS RENDERING ---
+    function draw() {
+      // Background Grid
+      ctx.fillStyle = "#070b14";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.05)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= GRID_SIZE; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * CELL_SIZE, 0);
+        ctx.lineTo(i * CELL_SIZE, canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * CELL_SIZE);
+        ctx.lineTo(canvas.width, i * CELL_SIZE);
+        ctx.stroke();
+      }
+
+      // Draw Sparks
+      for (let i = particleSparks.length - 1; i >= 0; i--) {
+        const p = particleSparks[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.05;
+        if (p.life <= 0) {
+          particleSparks.splice(i, 1);
+          continue;
+        }
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Draw Food (Quantum Energy Core)
+      food.pulse = (food.pulse + 0.08) % (Math.PI * 2);
+      const fx = food.x * CELL_SIZE + CELL_SIZE / 2;
+      const fy = food.y * CELL_SIZE + CELL_SIZE / 2;
+      const pulseRadius = (CELL_SIZE * 0.35) + Math.sin(food.pulse) * 2;
+
+      // Glow halo
+      const grad = ctx.createRadialGradient(fx, fy, 2, fx, fy, CELL_SIZE * 0.8);
+      grad.addColorStop(0, "rgba(0, 240, 255, 0.8)");
+      grad.addColorStop(0.5, "rgba(0, 240, 255, 0.2)");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(fx, fy, CELL_SIZE * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core
+      ctx.fillStyle = "#00f0ff";
+      ctx.beginPath();
+      ctx.arc(fx, fy, pulseRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner Hotspot
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(fx, fy, pulseRadius * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw Timed Bonus Food
+      if (bonusFood) {
+        const bx = bonusFood.x * CELL_SIZE + CELL_SIZE / 2;
+        const by = bonusFood.y * CELL_SIZE + CELL_SIZE / 2;
+        const bPulse = Math.sin(Date.now() / 150) * 3;
+
+        ctx.fillStyle = "rgba(255, 215, 0, 0.25)";
+        ctx.beginPath();
+        ctx.arc(bx, by, CELL_SIZE * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffd700";
+        ctx.shadowColor = "#ffd700";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(bx, by, CELL_SIZE * 0.38 + bPulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(bx, by, CELL_SIZE * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw Snake Body
+      for (let i = snake.length - 1; i >= 0; i--) {
+        const seg = snake[i];
+        const sx = seg.x * CELL_SIZE;
+        const sy = seg.y * CELL_SIZE;
+        const ratio = i / snake.length;
+
+        if (i === 0) {
+          // Snake Head
+          ctx.fillStyle = "#00ff88";
+          ctx.shadowColor = "#00ff88";
+          ctx.shadowBlur = 15;
+          ctx.beginPath();
+          ctx.roundRect(sx + 2, sy + 2, CELL_SIZE - 4, CELL_SIZE - 4, 8);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Expressive Cyber Eyes looking towards direction
+          const eyeRadius = CELL_SIZE * 0.12;
+          const eyeOffset = CELL_SIZE * 0.28;
+          const lookX = dir.x * 2.5;
+          const lookY = dir.y * 2.5;
+
+          const cx = sx + CELL_SIZE / 2;
+          const cy = sy + CELL_SIZE / 2;
+
+          let eye1X, eye1Y, eye2X, eye2Y;
+          if (dir.x !== 0) {
+            eye1X = cx + dir.x * eyeOffset;
+            eye1Y = cy - eyeOffset;
+            eye2X = cx + dir.x * eyeOffset;
+            eye2Y = cy + eyeOffset;
+          } else {
+            eye1X = cx - eyeOffset;
+            eye1Y = cy + dir.y * eyeOffset;
+            eye2X = cx + eyeOffset;
+            eye2Y = cy + dir.y * eyeOffset;
+          }
+
+          // Eye whites & pupils
+          ctx.fillStyle = "#070b14";
+          ctx.beginPath();
+          ctx.arc(eye1X, eye1Y, eyeRadius + 1, 0, Math.PI * 2);
+          ctx.arc(eye2X, eye2Y, eyeRadius + 1, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(eye1X + lookX, eye1Y + lookY, eyeRadius * 0.65, 0, Math.PI * 2);
+          ctx.arc(eye2X + lookX, eye2Y + lookY, eyeRadius * 0.65, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Body Segments with smooth neon transition
+          const r = Math.round(0 * (1 - ratio) + 0 * ratio);
+          const g = Math.round(255 * (1 - ratio) + 200 * ratio);
+          const b = Math.round(136 * (1 - ratio) + 255 * ratio);
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+          const pad = Math.min(4, 2 + ratio * 3);
+          ctx.beginPath();
+          ctx.roundRect(sx + pad, sy + pad, CELL_SIZE - pad * 2, CELL_SIZE - pad * 2, 6);
+          ctx.fill();
+        }
+      }
+    }
+
+    function createEatSparks(x, y, color) {
+      for (let i = 0; i < 14; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 4 + 2;
+        particleSparks.push({
+          x,
+          y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          size: Math.random() * 3 + 2,
+          color,
+          life: 1
+        });
+      }
+    }
+
+    function triggerGameOver(reason) {
+      isPlaying = false;
+      clearInterval(gameLoop);
+      if (bonusTimer) clearTimeout(bonusTimer);
+      ArcadeAudio.playGameOver();
+
+      const isNewBest = ArcadeStorage.setHighScore(getStorageKey(), score);
+      const best = updateHighScoreDisplay();
+
+      document.getElementById("finalScoreVal").innerText = score;
+      document.getElementById("bestScoreVal").innerText = best;
+
+      const titleEl = document.getElementById("gameOverTitle");
+      const msgEl = document.getElementById("gameOverMsg");
+
+      if (isNewBest && score > 0) {
+        titleEl.innerText = "NEW HIGH SCORE! 🏆";
+        titleEl.style.color = "var(--arcade-yellow)";
+        msgEl.innerText = `Sensational run! You set a new personal record of ${score} pts.`;
+        ArcadeFX.confetti();
+      } else {
+        titleEl.innerText = "CIRCUIT OVERLOAD";
+        titleEl.style.color = "var(--arcade-pink)";
+        msgEl.innerText = `${reason} Final score: ${score} points.`;
+      }
+
+      document.getElementById("gameOverModal").classList.add("active");
+    }
+
+    // --- KEYBOARD LISTENERS ---
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePause();
+        return;
+      }
+      if (e.code === "KeyR" && !isPlaying) {
+        restartGame();
+        return;
+      }
+
+      switch (e.code) {
+        case "ArrowUp":
+        case "KeyW":
+          e.preventDefault();
+          queueDirection(0, -1);
+          break;
+        case "ArrowDown":
+        case "KeyS":
+          e.preventDefault();
+          queueDirection(0, 1);
+          break;
+        case "ArrowLeft":
+        case "KeyA":
+          e.preventDefault();
+          queueDirection(-1, 0);
+          break;
+        case "ArrowRight":
+        case "KeyD":
+          e.preventDefault();
+          queueDirection(1, 0);
+          break;
+      }
     });
 
-    // --- ON-SCREEN BUTTON CONTROLS (For Mobile) ---
-    function setDirection(newDir) {
-        if(isPaused || isGameOver) return;
-        if(newDir == "LEFT" && d != "RIGHT") d = "LEFT";
-        if(newDir == "UP" && d != "DOWN") d = "UP";
-        if(newDir == "RIGHT" && d != "LEFT") d = "RIGHT";
-        if(newDir == "DOWN" && d != "UP") d = "DOWN";
+    // --- ON-SCREEN TOUCH DPAD ---
+    function bindDpad(btnId, x, y) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      const handlePress = (e) => {
+        e.preventDefault();
+        btn.classList.add("pressed");
+        queueDirection(x, y);
+      };
+      const handleRelease = (e) => {
+        e.preventDefault();
+        btn.classList.remove("pressed");
+      };
+      btn.addEventListener("touchstart", handlePress, { passive: false });
+      btn.addEventListener("touchend", handleRelease, { passive: false });
+      btn.addEventListener("mousedown", handlePress);
+      btn.addEventListener("mouseup", handleRelease);
     }
 
-    document.getElementById("btnUp").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("UP"); });
-    document.getElementById("btnDown").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("DOWN"); });
-    document.getElementById("btnLeft").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("LEFT"); });
-    document.getElementById("btnRight").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection("RIGHT"); });
+    bindDpad("dpadUp", 0, -1);
+    bindDpad("dpadDown", 0, 1);
+    bindDpad("dpadLeft", -1, 0);
+    bindDpad("dpadRight", 1, 0);
 
-    // --- SWIPE CONTROLS (For Mobile) ---
+    // --- SWIPE GESTURES ---
     let touchStartX = 0;
     let touchStartY = 0;
+    canvas.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+      touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
 
-    window.addEventListener('touchstart', function(e) {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-    }, {passive: false});
+    canvas.addEventListener("touchend", (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 25) {
+        queueDirection(dx > 0 ? 1 : -1, 0);
+      } else if (Math.abs(dy) > 25) {
+        queueDirection(0, dy > 0 ? 1 : -1);
+      }
+    }, { passive: true });
 
-    window.addEventListener('touchend', function(e) {
-        if(isPaused || isGameOver) return;
-        let touchEndX = e.changedTouches[0].screenX;
-        let touchEndY = e.changedTouches[0].screenY;
-        
-        let diffX = touchEndX - touchStartX;
-        let diffY = touchEndY - touchStartY;
-
-        if (Math.abs(diffX) > Math.abs(diffY)) {
-            // Horizontal Swipe
-            if (diffX > 40 && d != "LEFT") d = "RIGHT";
-            else if (diffX < -40 && d != "RIGHT") d = "LEFT";
-        } else {
-            // Vertical Swipe
-            if (diffY > 40 && d != "UP") d = "DOWN";
-            else if (diffY < -40 && d != "DOWN") d = "UP";
-        }
-    }, {passive: false});
-
-    // --- GAME ENGINE ---
-    function draw() {
-        ctx.fillStyle = "#e8f5e9";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        for(let i = 0; i < snake.length; i++) {
-            ctx.fillStyle = (i == 0) ? "#1b5e20" : "#43a047"; 
-            ctx.beginPath();
-            ctx.arc(snake[i].x + box/2, snake[i].y + box/2, (box/2) - 1, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        ctx.font = (box * 0.9) + "px Arial";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("🍊", food.x + box/2, food.y + box/2);
-
-        let snakeX = snake[0].x;
-        let snakeY = snake[0].y;
-
-        if(d == "LEFT") snakeX -= box;
-        if(d == "UP") snakeY -= box;
-        if(d == "RIGHT") snakeX += box;
-        if(d == "DOWN") snakeY += box;
-
-        if(snakeX == food.x && snakeY == food.y) {
-            score++;
-            document.getElementById("scoreVal").innerText = score;
-            food = generateFood(); 
-            if(speed > 70) {
-                speed -= 4; 
-                clearInterval(game);
-                game = setInterval(draw, speed);
-            }
-        } else {
-            snake.pop();
-        }
-
-        let newHead = {x: snakeX, y: snakeY};
-
-        let gameOver = false;
-        if(snakeX < 0 || snakeY < 0 || snakeX >= cols*box || snakeY >= rows*box) {
-            gameOver = true;
-        }
-        
-        for(let i = 0; i < snake.length; i++){
-            if(newHead.x == snake[i].x && newHead.y == snake[i].y){
-                gameOver = true;
-            }
-        }
-
-        if(gameOver){
-            isGameOver = true;
-            clearInterval(game);
-            showGameOverMenu(); 
-            return;
-        }
-        
-        snake.unshift(newHead);
+    // Responsive Canvas Resize
+    function resizeCanvas() {
+      const wrapper = document.getElementById("canvasWrapper");
+      const availableSize = Math.min(wrapper.clientWidth, window.innerHeight - 240, 600);
+      canvas.style.width = `${availableSize}px`;
+      canvas.style.height = `${availableSize}px`;
     }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
-    function showGameOverMenu() {
-        let textElement = document.getElementById("motivationalText");
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem("snakeBestScore", bestScore); 
-            textElement.innerText = "New High Score! 🎉";
-            textElement.style.color = "#4CAF50";
-        } else {
-            textElement.innerText = "Keep it up! Best: " + bestScore;
-        }
-        document.getElementById("finalScore").innerText = score;
-        document.getElementById("bestScoreDisplay").innerText = bestScore;
-        document.getElementById("gameOverModal").style.display = "block";
-    }
-
-    let countdown = 3;
-    function drawCountdown() {
-        ctx.fillStyle = "#e8f5e9";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#e64a19";
-        ctx.font = "bold 80px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        if (countdown > 0) ctx.fillText(countdown, canvas.width/2, canvas.height/2);
-        else if (countdown === 0) ctx.fillText("GO!", canvas.width/2, canvas.height/2);
-    }
-
-    drawCountdown(); 
-    let countInterval = setInterval(() => {
-        countdown--;
-        if (countdown >= 0) {
-            drawCountdown();
-        } else {
-            clearInterval(countInterval);
-            game = setInterval(draw, speed); 
-        }
-    }, 1000);
-
-    window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        cols = Math.floor(canvas.width / box);
-        rows = Math.floor(canvas.height / box);
-    });
+    // Init high score on load
+    updateHighScoreDisplay();
+    draw();
   </script>
 </body>
 </html>

@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Neon Breakout | VG-Arcade</title>
+  <meta name="description" content="Electrifying neon brick breaker arcade game with multi-hit glass bricks, laser cannons, and angle physics by Vaishnav Gupta.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Arcade Header -->
+  <header class="arcade-header">
+    <a href="../../index.html" class="arcade-brand" title="Back to Arcade Zone">
+      <div class="arcade-brand-icon"><i class="fas fa-gamepad"></i></div>
+      <span>VG-ARCADE</span>
+    </a>
+
+    <div class="arcade-stats-bar">
+      <div class="arcade-badge arcade-badge-highlight">
+        <span>SCORE:</span> <span id="currentScore">0</span>
+      </div>
+      <div class="arcade-badge" style="color:var(--arcade-pink);">
+        <i class="fas fa-heart"></i> <span id="livesDisplay">3</span>
+      </div>
+      <div class="arcade-badge">
+        <i class="fas fa-trophy" style="color:var(--arcade-yellow);"></i>
+        <span>BEST:</span> <span id="bestScore">0</span>
+      </div>
+    </div>
+
+    <div class="arcade-actions">
+      <button class="arcade-btn arcade-btn-icon arcade-sound-btn" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
+        <i class="fas fa-volume-up"></i>
+      </button>
+      <button id="pauseToggleBtn" class="arcade-btn arcade-btn-ghost" onclick="togglePause()">
+        <i class="fas fa-pause"></i> <span class="hide-mobile">Pause</span>
+      </button>
+      <a href="../../index.html" class="arcade-btn arcade-btn-danger" title="Exit to Hub">
+        <i class="fas fa-door-open"></i> <span class="hide-mobile">Exit</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Game Shell -->
+  <main class="breaker-container">
+    <div class="canvas-viewport" id="viewport">
+      <div class="level-ribbon" id="levelRibbon">SECTOR 1 // CASCADE</div>
+      <div class="powerup-pills" id="activePowerups"></div>
+      <div class="launch-guide" id="launchPrompt">Click or Press Space to Launch Ball</div>
+      <canvas id="gameCanvas" width="600" height="700"></canvas>
+    </div>
+
+    <div class="breaker-hints">
+      <span><span class="key-pill">◄</span> <span class="key-pill">►</span> or <span class="key-pill">MOUSE</span> Steer</span>
+      <span><span class="key-pill">SPACE</span> Launch / Laser</span>
+      <span><span class="key-pill">P</span> Pause</span>
+    </div>
+  </main>
+
+  <!-- Start Screen Modal -->
+  <div class="arcade-modal-backdrop active" id="startModal">
+    <div class="arcade-modal-card">
+      <div class="game-badge-icon">🧱</div>
+      <h1 class="arcade-modal-title" style="color:var(--arcade-pink);">NEON BREAKOUT</h1>
+      <p class="arcade-modal-desc">
+        Demolish multi-tier neon bricks, collect falling weapon enhancements, and steer with precision paddle angles.
+      </p>
+
+      <div class="arcade-stat-grid">
+        <div class="arcade-stat-item">
+          <div class="label">High Score</div>
+          <div class="val highlight" id="modalBestDisplay">0</div>
+        </div>
+        <div class="arcade-stat-item">
+          <div class="label">Sectors</div>
+          <div class="val" style="color:var(--arcade-cyan);">3 Stages</div>
+        </div>
+      </div>
+
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="startGame()">
+          <i class="fas fa-play"></i> LAUNCH MISSION
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause Modal -->
+  <div class="arcade-modal-backdrop" id="pauseModal">
+    <div class="arcade-modal-card">
+      <h2 class="arcade-modal-title"><i class="fas fa-pause-circle"></i> SYSTEM PAUSED</h2>
+      <p class="arcade-modal-desc">Ball trajectory frozen. Ready when you are!</p>
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="togglePause()">
+          <i class="fas fa-play"></i> RESUME
+        </button>
+        <button class="arcade-btn arcade-btn-ghost" onclick="restartGame()">
+          <i class="fas fa-redo"></i> RESTART
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Level Completed Modal -->
+  <div class="arcade-modal-backdrop" id="levelClearModal">
+    <div class="arcade-modal-card">
+      <h2 class="arcade-modal-title" style="color:var(--arcade-green);"><i class="fas fa-check-circle"></i> SECTOR CLEARED!</h2>
+      <p class="arcade-modal-desc" id="levelClearDesc">All bricks vaporized. Power levels rising!</p>
+      <div class="arcade-stat-grid">
+        <div class="arcade-stat-item">
+          <div class="label">Sector Bonus</div>
+          <div class="val highlight">+500 PTS</div>
+        </div>
+        <div class="arcade-stat-item">
+          <div class="label">Current Score</div>
+          <div class="val" id="levelClearScore">0</div>
+        </div>
+      </div>
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="nextLevel()">
+          <i class="fas fa-forward"></i> NEXT SECTOR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div class="arcade-modal-backdrop" id="gameOverModal">
+    <div class="arcade-modal-card">
+      <h2 class="arcade-modal-title" id="gameOverTitle" style="color:var(--arcade-pink);">DEFENSE BREACHED</h2>
+      <p class="arcade-modal-desc" id="gameOverMsg">All defensive cores were exhausted.</p>
+
+      <div class="arcade-stat-grid">
+        <div class="arcade-stat-item">
+          <div class="label">Final Score</div>
+          <div class="val highlight" id="finalScoreVal">0</div>
+        </div>
+        <div class="arcade-stat-item">
+          <div class="label">Best Score</div>
+          <div class="val" id="bestScoreVal">0</div>
+        </div>
+      </div>
+
+      <div class="arcade-modal-buttons">
+        <button class="arcade-btn arcade-btn-primary" onclick="restartGame()">
+          <i class="fas fa-redo"></i> PLAY AGAIN
+        </button>
+        <a href="../../index.html" class="arcade-btn arcade-btn-ghost">
+          <i class="fas fa-home"></i> HUB
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../shared/arcade-core.js"></script>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Game Variables
+    let currentLevel = 1;
+    let score = 0;
+    let lives = 3;
+    let bestScore = 0;
+    let isPlaying = false;
+    let isPaused = false;
+    let ballAttached = true;
+    let combo = 1;
+    let lastHitTime = 0;
+
+    // Paddle
+    const paddle = {
+      w: 110,
+      baseW: 110,
+      h: 16,
+      x: 245,
+      y: 650,
+      speed: 8,
+      dx: 0,
+      laserTimer: 0,
+      wideTimer: 0
+    };
+
+    // Balls list (supports multi-ball power-up)
+    let balls = [];
+
+    // Bricks list
+    let bricks = [];
+
+    // Particles & Power-ups
+    let particles = [];
+    let powerups = [];
+    let lasers = [];
+
+    ArcadeStorage.recordPlay('breaker');
+
+    function updateHighScore() {
+      bestScore = ArcadeStorage.getHighScore('breaker', 0);
+      document.getElementById("bestScore").innerText = bestScore;
+      document.getElementById("modalBestDisplay").innerText = bestScore;
+    }
+
+    // --- LEVEL DEFINITIONS ---
+    function buildBricks(level) {
+      bricks = [];
+      const rows = level === 1 ? 5 : (level === 2 ? 6 : 7);
+      const cols = 8;
+      const brickW = 64;
+      const brickH = 22;
+      const padX = 8;
+      const padY = 8;
+      const startX = 14;
+      const startY = 65;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const bx = startX + c * (brickW + padX);
+          const by = startY + r * (brickH + padY);
+
+          let hp = 1;
+          let type = 'normal';
+          let color = '#00f0ff';
+
+          if (level === 1) {
+            if (r === 0) { hp = 2; color = '#ff007f'; }
+            else if (r === 1) { hp = 2; color = '#a855f7'; }
+            else if (r === 2) { hp = 1; color = '#00f0ff'; }
+            else { hp = 1; color = '#00ff88'; }
+          } else if (level === 2) {
+            if (r === 0) { hp = 3; color = '#ffd700'; }
+            else if (r === 1 && (c === 2 || c === 5)) { hp = 1; type = 'bomb'; color = '#ff3b30'; }
+            else if (r <= 2) { hp = 2; color = '#ff007f'; }
+            else { hp = 1; color = '#00f0ff'; }
+          } else {
+            // Level 3 - Overdrive
+            if (r === 0 || r === 1) { hp = 3; color = '#ffd700'; }
+            else if ((r === 2 || r === 3) && (c === 1 || c === 6)) { hp = 1; type = 'bomb'; color = '#ff3b30'; }
+            else if (r <= 4) { hp = 2; color = '#a855f7'; }
+            else { hp = 1; color = '#00f0ff'; }
+          }
+
+          bricks.push({
+            x: bx,
+            y: by,
+            w: brickW,
+            h: brickH,
+            hp: hp,
+            maxHp: hp,
+            type: type,
+            color: color,
+            alive: true
+          });
+        }
+      }
+    }
+
+    function initBall() {
+      balls = [{
+        x: paddle.x + paddle.w / 2,
+        y: paddle.y - 10,
+        r: 8,
+        vx: 3.5,
+        vy: -5.5,
+        speed: 6.5,
+        trail: []
+      }];
+      ballAttached = true;
+      document.getElementById("launchPrompt").classList.remove("hidden");
+    }
+
+    function startGame() {
+      document.getElementById("startModal").classList.remove("active");
+      document.getElementById("gameOverModal").classList.remove("active");
+      document.getElementById("levelClearModal").classList.remove("active");
+
+      currentLevel = 1;
+      score = 0;
+      lives = 3;
+      document.getElementById("currentScore").innerText = score;
+      document.getElementById("livesDisplay").innerText = lives;
+      document.getElementById("levelRibbon").innerText = `SECTOR 1 // CASCADE`;
+
+      paddle.w = paddle.baseW;
+      paddle.laserTimer = 0;
+      paddle.wideTimer = 0;
+      powerups = [];
+      lasers = [];
+      particles = [];
+
+      buildBricks(currentLevel);
+      initBall();
+
+      isPlaying = true;
+      isPaused = false;
+      updateHighScore();
+      ArcadeAudio.playClick();
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function launchBall() {
+      if (!ballAttached || !isPlaying || isPaused) return;
+      ballAttached = false;
+      document.getElementById("launchPrompt").classList.add("hidden");
+      ArcadeAudio.playBounce();
+    }
+
+    function togglePause() {
+      if (!isPlaying) return;
+      isPaused = !isPaused;
+      const pauseModal = document.getElementById("pauseModal");
+      const pauseBtn = document.getElementById("pauseToggleBtn");
+
+      if (isPaused) {
+        pauseModal.classList.add("active");
+        pauseBtn.innerHTML = '<i class="fas fa-play"></i> <span class="hide-mobile">Resume</span>';
+      } else {
+        pauseModal.classList.remove("active");
+        pauseBtn.innerHTML = '<i class="fas fa-pause"></i> <span class="hide-mobile">Pause</span>';
+      }
+      ArcadeAudio.playClick();
+    }
+
+    // --- GAME ENGINE LOOP ---
+    function loop() {
+      if (isPlaying && !isPaused) {
+        update();
+      }
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function update() {
+      // Paddle position update via keyboard dx
+      paddle.x += paddle.dx;
+      if (paddle.x < 10) paddle.x = 10;
+      if (paddle.x + paddle.w > canvas.width - 10) paddle.x = canvas.width - 10 - paddle.w;
+
+      // Handle power-up timers
+      if (paddle.wideTimer > 0) {
+        paddle.wideTimer--;
+        if (paddle.wideTimer === 0) paddle.w = paddle.baseW;
+      }
+      if (paddle.laserTimer > 0) {
+        paddle.laserTimer--;
+        // Auto-shoot lasers periodically
+        if (paddle.laserTimer % 18 === 0) {
+          shootLasers();
+        }
+      }
+      updatePowerupUI();
+
+      // If ball is docked on paddle
+      if (ballAttached && balls.length > 0) {
+        balls[0].x = paddle.x + paddle.w / 2;
+        balls[0].y = paddle.y - balls[0].r - 1;
+      }
+
+      // Update Balls
+      for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+        if (ballAttached && i === 0) continue;
+
+        // Trail recording
+        b.trail.unshift({ x: b.x, y: b.y, alpha: 0.6 });
+        if (b.trail.length > 6) b.trail.pop();
+
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Wall collisions
+        if (b.x - b.r <= 0) {
+          b.x = b.r;
+          b.vx = Math.abs(b.vx);
+          ArcadeAudio.playBounce();
+        } else if (b.x + b.r >= canvas.width) {
+          b.x = canvas.width - b.r;
+          b.vx = -Math.abs(b.vx);
+          ArcadeAudio.playBounce();
+        }
+
+        if (b.y - b.r <= 0) {
+          b.y = b.r;
+          b.vy = Math.abs(b.vy);
+          ArcadeAudio.playBounce();
+        }
+
+        // Paddle collision (Surgical angle steering)
+        if (
+          b.y + b.r >= paddle.y &&
+          b.y - b.r <= paddle.y + paddle.h &&
+          b.x >= paddle.x - b.r &&
+          b.x <= paddle.x + paddle.w + b.r &&
+          b.vy > 0
+        ) {
+          b.y = paddle.y - b.r;
+          const hitOffset = (b.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+          const maxAngle = (70 * Math.PI) / 180;
+          const bounceAngle = hitOffset * maxAngle;
+
+          const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+          b.vx = speed * Math.sin(bounceAngle);
+          b.vy = -speed * Math.cos(bounceAngle);
+
+          // Prevent shallow horizontal lock
+          if (Math.abs(b.vy) < 2) b.vy = -3;
+
+          combo = 1; // Reset combo on paddle return
+          ArcadeAudio.playBounce();
+          createSparks(b.x, b.y, '#00f0ff', 6);
+        }
+
+        // Brick collision
+        for (let j = 0; j < bricks.length; j++) {
+          const br = bricks[j];
+          if (!br.alive) continue;
+
+          if (
+            b.x + b.r >= br.x &&
+            b.x - b.r <= br.x + br.w &&
+            b.y + b.r >= br.y &&
+            b.y - b.r <= br.y + br.h
+          ) {
+            // Collision detected
+            damageBrick(br);
+
+            // Determine bounce direction
+            const prevX = b.x - b.vx;
+            const prevY = b.y - b.vy;
+
+            if (prevX + b.r <= br.x || prevX - b.r >= br.x + br.w) {
+              b.vx = -b.vx;
+            } else {
+              b.vy = -b.vy;
+            }
+
+            break; // One brick per tick per ball
+          }
+        }
+
+        // Bottom boundary loss
+        if (b.y - b.r > canvas.height) {
+          balls.splice(i, 1);
+        }
+      }
+
+      // Check if all balls were lost
+      if (balls.length === 0) {
+        lives--;
+        document.getElementById("livesDisplay").innerText = lives;
+        ArcadeAudio.playError();
+
+        if (lives <= 0) {
+          triggerGameOver();
+        } else {
+          initBall();
+        }
+      }
+
+      // Update Power-Up Capsules
+      for (let i = powerups.length - 1; i >= 0; i--) {
+        const p = powerups[i];
+        p.y += p.speed;
+
+        // Collect powerup
+        if (
+          p.y + p.h >= paddle.y &&
+          p.y <= paddle.y + paddle.h &&
+          p.x + p.w >= paddle.x &&
+          p.x <= paddle.x + paddle.w
+        ) {
+          applyPowerup(p.type);
+          createSparks(p.x, p.y, '#ffd700', 14);
+          powerups.splice(i, 1);
+          continue;
+        }
+
+        // Fell off screen
+        if (p.y > canvas.height) {
+          powerups.splice(i, 1);
+        }
+      }
+
+      // Update Lasers
+      for (let i = lasers.length - 1; i >= 0; i--) {
+        const l = lasers[i];
+        l.y -= 12;
+
+        let hit = false;
+        for (let j = 0; j < bricks.length; j++) {
+          const br = bricks[j];
+          if (!br.alive) continue;
+          if (l.x >= br.x && l.x <= br.x + br.w && l.y <= br.y + br.h && l.y >= br.y) {
+            damageBrick(br);
+            hit = true;
+            break;
+          }
+        }
+
+        if (hit || l.y < 0) {
+          lasers.splice(i, 1);
+        }
+      }
+
+      // Update Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= p.decay;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      // Check Level Clear condition
+      const remainingBricks = bricks.filter(b => b.alive).length;
+      if (remainingBricks === 0) {
+        onLevelCleared();
+      }
+    }
+
+    function damageBrick(br) {
+      br.hp--;
+      const now = Date.now();
+      if (now - lastHitTime < 1400) {
+        combo = Math.min(combo + 1, 8);
+      } else {
+        combo = 1;
+      }
+      lastHitTime = now;
+
+      score += 15 * combo;
+      document.getElementById("currentScore").innerText = score;
+      ArcadeAudio.playBrickBreak(combo);
+
+      if (br.hp <= 0) {
+        br.alive = false;
+        createSparks(br.x + br.w / 2, br.y + br.h / 2, br.color, 16);
+
+        // Bomb explosion
+        if (br.type === 'bomb') {
+          detonateBomb(br.x + br.w / 2, br.y + br.h / 2);
+        }
+
+        // 18% chance to drop powerup capsule
+        if (Math.random() < 0.2) {
+          spawnPowerup(br.x + br.w / 2, br.y + br.h / 2);
+        }
+      } else {
+        createSparks(br.x + br.w / 2, br.y + br.h / 2, br.color, 6);
+      }
+    }
+
+    function detonateBomb(cx, cy) {
+      ArcadeAudio.playBonus();
+      ArcadeFX.burst(cx, cy, 30, ['#ff3b30', '#ffd700', '#ff007f']);
+
+      bricks.forEach(br => {
+        if (!br.alive) return;
+        const bx = br.x + br.w / 2;
+        const by = br.y + br.h / 2;
+        const dist = Math.hypot(bx - cx, by - cy);
+        if (dist < 110) {
+          br.alive = false;
+          score += 25 * combo;
+          createSparks(bx, by, br.color, 10);
+        }
+      });
+    }
+
+    function spawnPowerup(x, y) {
+      const types = ['wide', 'laser', 'multi', 'life'];
+      const chosen = types[Math.floor(Math.random() * types.length)];
+      powerups.push({
+        x: x - 12,
+        y: y,
+        w: 24,
+        h: 24,
+        speed: 2.4,
+        type: chosen
+      });
+    }
+
+    function applyPowerup(type) {
+      ArcadeAudio.playPowerup();
+      if (type === 'wide') {
+        paddle.w = paddle.baseW * 1.45;
+        paddle.wideTimer = 600; // 10 seconds
+      } else if (type === 'laser') {
+        paddle.laserTimer = 500; // ~8 seconds of twin laser fire
+      } else if (type === 'multi') {
+        // Spawn 2 extra balls
+        if (balls.length > 0) {
+          const mainB = balls[0];
+          balls.push({
+            x: mainB.x,
+            y: mainB.y,
+            r: 8,
+            vx: -3.5,
+            vy: -5,
+            speed: mainB.speed,
+            trail: []
+          });
+          balls.push({
+            x: mainB.x,
+            y: mainB.y,
+            r: 8,
+            vx: 1.5,
+            vy: -6,
+            speed: mainB.speed,
+            trail: []
+          });
+        }
+      } else if (type === 'life') {
+        lives++;
+        document.getElementById("livesDisplay").innerText = lives;
+      }
+    }
+
+    function shootLasers() {
+      lasers.push({ x: paddle.x + 12, y: paddle.y });
+      lasers.push({ x: paddle.x + paddle.w - 12, y: paddle.y });
+      ArcadeAudio.playBeep(880, 'square', 0.04, 0.1);
+    }
+
+    function updatePowerupUI() {
+      const container = document.getElementById("activePowerups");
+      container.innerHTML = "";
+      if (paddle.wideTimer > 0) {
+        container.innerHTML += `<div class="power-pill wide"><i class="fas fa-arrows-alt-h"></i> WIDE</div>`;
+      }
+      if (paddle.laserTimer > 0) {
+        container.innerHTML += `<div class="power-pill laser"><i class="fas fa-bolt"></i> LASER</div>`;
+      }
+    }
+
+    function createSparks(x, y, color, count = 10) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 5 + 1.5;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          color,
+          size: Math.random() * 3.5 + 1.5,
+          life: 1,
+          decay: Math.random() * 0.03 + 0.02
+        });
+      }
+    }
+
+    function onLevelCleared() {
+      score += 500;
+      document.getElementById("currentScore").innerText = score;
+      ArcadeAudio.playWin();
+      ArcadeFX.confetti();
+
+      if (currentLevel < 3) {
+        document.getElementById("levelClearScore").innerText = score;
+        document.getElementById("levelClearModal").classList.add("active");
+        isPlaying = false;
+      } else {
+        // ALL 3 LEVELS BEATEN!
+        triggerVictory();
+      }
+    }
+
+    function nextLevel() {
+      document.getElementById("levelClearModal").classList.remove("active");
+      currentLevel++;
+      document.getElementById("levelRibbon").innerText = `SECTOR ${currentLevel} // ${currentLevel === 2 ? 'CYBER SHIELD' : 'OVERDRIVE'}`;
+      buildBricks(currentLevel);
+      initBall();
+      isPlaying = true;
+    }
+
+    function triggerGameOver() {
+      isPlaying = false;
+      ArcadeAudio.playGameOver();
+      const isNewBest = ArcadeStorage.setHighScore('breaker', score);
+      updateHighScore();
+
+      document.getElementById("finalScoreVal").innerText = score;
+      document.getElementById("bestScoreVal").innerText = bestScore;
+
+      const titleEl = document.getElementById("gameOverTitle");
+      const msgEl = document.getElementById("gameOverMsg");
+
+      if (isNewBest && score > 0) {
+        titleEl.innerText = "NEW HIGH RECORD! 🏆";
+        titleEl.style.color = "var(--arcade-yellow)";
+        msgEl.innerText = `Masterful paddle control! New high score: ${score} points.`;
+        ArcadeFX.confetti();
+      } else {
+        titleEl.innerText = "DEFENSE COMPROMISED";
+        titleEl.style.color = "var(--arcade-pink)";
+        msgEl.innerText = `Final Score: ${score} | Reached Sector ${currentLevel}`;
+      }
+
+      document.getElementById("gameOverModal").classList.add("active");
+    }
+
+    function triggerVictory() {
+      isPlaying = false;
+      ArcadeAudio.playWin();
+      ArcadeFX.confetti();
+      ArcadeStorage.setHighScore('breaker', score);
+      updateHighScore();
+
+      document.getElementById("finalScoreVal").innerText = score;
+      document.getElementById("bestScoreVal").innerText = bestScore;
+
+      document.getElementById("gameOverTitle").innerText = "GALAXY LIBERATED! 👑";
+      document.getElementById("gameOverTitle").style.color = "var(--arcade-yellow)";
+      document.getElementById("gameOverMsg").innerText = `Champion! All 3 sectors conquered. Final score: ${score} points!`;
+
+      document.getElementById("gameOverModal").classList.add("active");
+    }
+
+    // --- RENDERING ---
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Arena Background
+      ctx.fillStyle = "#070913";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Cyber Grid floor horizon
+      ctx.strokeStyle = "rgba(255, 0, 127, 0.08)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // Draw Bricks
+      for (let i = 0; i < bricks.length; i++) {
+        const br = bricks[i];
+        if (!br.alive) continue;
+
+        ctx.save();
+        ctx.shadowColor = br.color;
+        ctx.shadowBlur = br.type === 'bomb' ? 14 : 8;
+
+        // Brick Body
+        ctx.fillStyle = br.color;
+        ctx.beginPath();
+        ctx.roundRect(br.x, br.y, br.w, br.h, 4);
+        ctx.fill();
+
+        // Inner translucent plate
+        ctx.fillStyle = "rgba(7, 9, 19, 0.4)";
+        ctx.beginPath();
+        ctx.roundRect(br.x + 3, br.y + 3, br.w - 6, br.h - 6, 2);
+        ctx.fill();
+
+        // Fissure cracks on damaged multi-hit bricks
+        if (br.hp < br.maxHp) {
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(br.x + br.w * 0.3, br.y + 3);
+          ctx.lineTo(br.x + br.w * 0.5, br.y + br.h * 0.6);
+          ctx.lineTo(br.x + br.w * 0.7, br.y + br.h - 3);
+          ctx.stroke();
+        }
+
+        // Bomb icon
+        if (br.type === 'bomb') {
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("💣", br.x + br.w / 2, br.y + br.h / 2);
+        }
+
+        ctx.restore();
+      }
+
+      // Draw Powerup Capsules
+      for (let i = 0; i < powerups.length; i++) {
+        const p = powerups[i];
+        ctx.save();
+        ctx.shadowColor = "#ffd700";
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath();
+        ctx.roundRect(p.x, p.y, p.w, p.h, 6);
+        ctx.fill();
+
+        ctx.fillStyle = "#070913";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        let sym = "★";
+        if (p.type === 'wide') sym = "W";
+        if (p.type === 'laser') sym = "L";
+        if (p.type === 'multi') sym = "M";
+        if (p.type === 'life') sym = "+";
+        ctx.fillText(sym, p.x + p.w / 2, p.y + p.h / 2);
+        ctx.restore();
+      }
+
+      // Draw Lasers
+      ctx.fillStyle = "#ff007f";
+      ctx.shadowColor = "#ff007f";
+      ctx.shadowBlur = 12;
+      for (let i = 0; i < lasers.length; i++) {
+        const l = lasers[i];
+        ctx.fillRect(l.x - 2, l.y, 4, 16);
+      }
+      ctx.shadowBlur = 0;
+
+      // Draw Paddle
+      ctx.save();
+      ctx.shadowColor = "#00f0ff";
+      ctx.shadowBlur = 15;
+
+      // Metallic glow body
+      const padGrad = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.w, paddle.y);
+      padGrad.addColorStop(0, "#00f0ff");
+      padGrad.addColorStop(0.5, "#ffffff");
+      padGrad.addColorStop(1, "#00f0ff");
+      ctx.fillStyle = padGrad;
+      ctx.beginPath();
+      ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, [8, 8, 4, 4]);
+      ctx.fill();
+
+      // Laser pods on paddle if active
+      if (paddle.laserTimer > 0) {
+        ctx.fillStyle = "#ff007f";
+        ctx.fillRect(paddle.x + 8, paddle.y - 6, 6, 8);
+        ctx.fillRect(paddle.x + paddle.w - 14, paddle.y - 6, 6, 8);
+      }
+      ctx.restore();
+
+      // Draw Ball Trails & Balls
+      for (let i = 0; i < balls.length; i++) {
+        const b = balls[i];
+
+        // Motion trail
+        b.trail.forEach(t => {
+          ctx.fillStyle = `rgba(0, 240, 255, ${t.alpha * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, b.r * 0.75, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Ball Core
+        ctx.save();
+        ctx.shadowColor = "#00f0ff";
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#00f0ff";
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Draw Particles
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // --- INPUT CONTROLS ---
+    // Keyboard
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "ArrowLeft" || e.code === "KeyA") {
+        paddle.dx = -paddle.speed;
+      } else if (e.code === "ArrowRight" || e.code === "KeyD") {
+        paddle.dx = paddle.speed;
+      } else if (e.code === "Space") {
+        e.preventDefault();
+        if (ballAttached) {
+          launchBall();
+        } else if (paddle.laserTimer > 0) {
+          shootLasers();
+        }
+      } else if (e.code === "KeyP") {
+        togglePause();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (
+        (e.code === "ArrowLeft" || e.code === "KeyA") && paddle.dx < 0 ||
+        (e.code === "ArrowRight" || e.code === "KeyD") && paddle.dx > 0
+      ) {
+        paddle.dx = 0;
+      }
+    });
+
+    // Mouse Controls (Pointer lock or movement tracking)
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      paddle.x = mouseX - paddle.w / 2;
+      if (paddle.x < 10) paddle.x = 10;
+      if (paddle.x + paddle.w > canvas.width - 10) paddle.x = canvas.width - 10 - paddle.w;
+    });
+
+    canvas.addEventListener("click", () => {
+      if (ballAttached) {
+        launchBall();
+      } else if (paddle.laserTimer > 0) {
+        shootLasers();
+      }
+    });
+
+    // Touch Controls
+    canvas.addEventListener("touchmove", (e) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const touchX = (e.touches[0].clientX - rect.left) * scaleX;
+        paddle.x = touchX - paddle.w / 2;
+        if (paddle.x < 10) paddle.x = 10;
+        if (paddle.x + paddle.w > canvas.width - 10) paddle.x = canvas.width - 10 - paddle.w;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (ballAttached) {
+        launchBall();
+      } else if (paddle.laserTimer > 0) {
+        shootLasers();
+      }
+    }, { passive: true });
+
+    // Responsive Canvas Resizing
+    function resizeCanvas() {
+      const viewport = document.getElementById("viewport");
+      const availableW = Math.min(viewport.clientWidth, 600);
+      const availableH = Math.min(window.innerHeight - 170, 700);
+      const ratio = 600 / 700;
+
+      let targetW = availableW;
+      let targetH = targetW / ratio;
+
+      if (targetH > availableH) {
+        targetH = availableH;
+        targetW = targetH * ratio;
+      }
+
+      canvas.style.width = `${targetW}px`;
+      canvas.style.height = `${targetH}px`;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // Start loop
+    updateHighScore();
+    buildBricks(1);
+    initBall();
+    loop();
+  </script>
+</body>
+</html>
