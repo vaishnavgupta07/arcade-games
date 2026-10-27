@@ -1,7 +1,6 @@
 /**
- * Royal Kingdom Chess - Dual AI Architecture
- * Primary: Stockfish Engine via Web Worker (UCI Protocol)
- * Secondary: Full Minimax Alpha-Beta Engine with Piece-Square Tables (Instant Fallback)
+ * Royal Kingdom Chess - Dual AI Architecture with Humanized Cadence
+ * Supports Stockfish UCI Worker & Tactical Minimax with Configurable Presentation Speed.
  */
 
 class ChessAI {
@@ -10,7 +9,11 @@ class ChessAI {
         this.isWorkerReady = false;
         this.currentSearchId = 0;
         this.onThinkingCallback = null;
+        this.onThinkingStepCallback = null;
         this.workerFailed = false;
+
+        // Configurable AI response speed: 'fast' (1-1.5s), 'natural' (2.5-3.5s), 'relaxed' (4.5-6.5s)
+        this.responseSpeed = localStorage.getItem('rk_ai_speed') || 'natural';
 
         // 6 Distinct Difficulty Profiles
         this.difficultyProfiles = {
@@ -19,7 +22,7 @@ class ChessAI {
                 stockfishSkill: 0,
                 stockfishDepth: 1,
                 maxMoveTime: 400,
-                blunderRate: 0.35, // 35% chance to make a suboptimal legal move
+                blunderRate: 0.35,
                 minimaxDepth: 1
             },
             medium: {
@@ -67,8 +70,23 @@ class ChessAI {
         this.initStockfishWorker();
     }
 
+    setResponseSpeed(speed = 'natural') {
+        if (['fast', 'natural', 'relaxed'].includes(speed)) {
+            this.responseSpeed = speed;
+            localStorage.setItem('rk_ai_speed', speed);
+        }
+    }
+
+    getResponseSpeed() {
+        return this.responseSpeed;
+    }
+
     setThinkingListener(callback) {
         this.onThinkingCallback = callback;
+    }
+
+    setThinkingStepListener(callback) {
+        this.onThinkingStepCallback = callback;
     }
 
     notifyThinking(isThinking) {
@@ -77,9 +95,14 @@ class ChessAI {
         }
     }
 
+    notifyThinkingStep(msg) {
+        if (typeof this.onThinkingStepCallback === 'function') {
+            this.onThinkingStepCallback(msg);
+        }
+    }
+
     initStockfishWorker() {
         try {
-            // Attempt to load Stockfish worker from local lib or blob
             const workerUrl = 'lib/stockfish.js';
             this.worker = new Worker(workerUrl);
 
@@ -91,16 +114,15 @@ class ChessAI {
             };
 
             this.worker.onerror = (err) => {
-                console.warn('Stockfish Worker initialization warning, falling back to tactical minimax engine:', err);
+                console.warn('Stockfish Worker warning, falling back to tactical minimax engine:', err);
                 this.workerFailed = true;
                 this.isWorkerReady = false;
             };
 
-            // Initialize UCI
             this.worker.postMessage('uci');
             this.worker.postMessage('isready');
         } catch (e) {
-            console.warn('Web Worker not allowed or unsupported in this context. Using robust built-in Minimax engine.', e);
+            console.warn('Using built-in Minimax engine:', e);
             this.workerFailed = true;
             this.isWorkerReady = false;
         }
@@ -116,7 +138,19 @@ class ChessAI {
         }
     }
 
-    // Main entry point for getting the AI's move
+    // Get Target presentation delay based on selected speed
+    getTargetDelay() {
+        switch (this.responseSpeed) {
+            case 'fast':
+                return 800 + Math.random() * 500; // ~0.8s - 1.3s
+            case 'relaxed':
+                return 4200 + Math.random() * 1800; // ~4.2s - 6.0s
+            case 'natural':
+            default:
+                return 2200 + Math.random() * 1200; // ~2.2s - 3.4s
+        }
+    }
+
     async getBestMove(engine, difficultyKey = 'normal') {
         const searchId = ++this.currentSearchId;
         const profile = this.difficultyProfiles[difficultyKey] || this.difficultyProfiles.normal;
@@ -126,43 +160,72 @@ class ChessAI {
             return null;
         }
 
+        const targetDelay = this.getTargetDelay();
+        const startTimestamp = Date.now();
+
         this.notifyThinking(true);
+        this.notifyThinkingStep('Analyzing board tactical tension...');
 
-        // Blunder factor simulation for lower levels (play a random valid move occasionally)
+        // Periodic simulated humanized thinking stages
+        const stepTimer1 = setTimeout(() => {
+            if (this.currentSearchId === searchId) {
+                this.notifyThinkingStep('Evaluating piece development & king safety...');
+            }
+        }, Math.min(800, targetDelay * 0.35));
+
+        const stepTimer2 = setTimeout(() => {
+            if (this.currentSearchId === searchId) {
+                this.notifyThinkingStep('Calculating royal combinations & counters...');
+            }
+        }, Math.min(1800, targetDelay * 0.7));
+
+        let chosenMove = null;
+
+        // Blunder factor simulation for lower levels
         if (profile.blunderRate > 0 && Math.random() < profile.blunderRate) {
-            await new Promise(r => setTimeout(r, 350 + Math.random() * 300));
-            this.notifyThinking(false);
-            if (this.currentSearchId !== searchId) return null;
-            return legalMoves[Math.floor(Math.random() * legalMoves.length)];
-        }
-
-        // Try Stockfish engine first if ready
-        if (this.worker && this.isWorkerReady && !this.workerFailed) {
+            chosenMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        } else if (this.worker && this.isWorkerReady && !this.workerFailed) {
             try {
-                const move = await this.queryStockfish(engine.getFen(), profile, searchId);
-                this.notifyThinking(false);
-                if (move && this.currentSearchId === searchId) {
-                    return move;
-                }
+                chosenMove = await this.queryStockfish(engine.getFen(), profile, searchId);
             } catch (err) {
-                console.warn('Stockfish query timed out or failed, utilizing tactical minimax fallback.', err);
+                console.warn('Stockfish query fallback:', err);
             }
         }
 
-        // Tactical Minimax Engine fallback
-        await new Promise(r => setTimeout(r, 200 + Math.random() * 250));
-        const fallbackMove = this.minimaxBestMove(engine, profile.minimaxDepth);
+        if (!chosenMove && this.currentSearchId === searchId) {
+            chosenMove = this.minimaxBestMove(engine, profile.minimaxDepth);
+        }
+
+        if (!chosenMove) {
+            chosenMove = legalMoves[0];
+        }
+
+        // Ensure natural presentation delay is respected
+        const elapsed = Date.now() - startTimestamp;
+        const remainingDelay = Math.max(0, targetDelay - elapsed);
+
+        if (remainingDelay > 0) {
+            await new Promise(r => setTimeout(r, remainingDelay));
+        }
+
+        clearTimeout(stepTimer1);
+        clearTimeout(stepTimer2);
+
         this.notifyThinking(false);
 
-        if (this.currentSearchId !== searchId) return null;
-        return fallbackMove || legalMoves[0];
+        // Cancel if search was superseded or game reset
+        if (this.currentSearchId !== searchId) {
+            return null;
+        }
+
+        return chosenMove;
     }
 
     queryStockfish(fen, profile, searchId) {
         return new Promise((resolve) => {
             const timeout = setTimeout(() => {
                 resolve(null);
-            }, profile.maxMoveTime + 1500);
+            }, profile.maxMoveTime + 1800);
 
             const handler = (event) => {
                 const line = typeof event.data === 'string' ? event.data : '';
@@ -189,8 +252,6 @@ class ChessAI {
             };
 
             this.worker.addEventListener('message', handler);
-
-            // Configure UCI parameters for the profile
             this.worker.postMessage('ucinewgame');
             this.worker.postMessage(`setoption name Skill Level value ${profile.stockfishSkill}`);
             this.worker.postMessage(`position fen ${fen}`);
@@ -198,14 +259,10 @@ class ChessAI {
         });
     }
 
-    // =========================================================================
-    // BUILT-IN MINIMAX ENGINE WITH PIECE-SQUARE TABLES & HEURISTIC POSITION EVAL
-    // =========================================================================
     minimaxBestMove(engine, maxDepth = 3) {
         const moves = engine.getAllLegalMoves();
         if (moves.length === 0) return null;
 
-        // Sort moves: Captures first (MVV-LVA), then checks
         moves.sort((a, b) => {
             const valA = a.captured ? this.getPieceValue(a.captured) * 10 - this.getPieceValue(a.piece) : 0;
             const valB = b.captured ? this.getPieceValue(b.captured) * 10 - this.getPieceValue(b.piece) : 0;
@@ -283,7 +340,6 @@ class ChessAI {
         return values[type] || 0;
     }
 
-    // Comprehensive board evaluation: Material + Piece Square Tables (PST) + King Safety
     evaluateBoard(engine) {
         if (engine.chess.in_checkmate()) {
             return engine.chess.turn() === 'w' ? -100000 : 100000;
@@ -315,9 +371,7 @@ class ChessAI {
         return totalScore;
     }
 
-    // Piece-Square Tables (PST) encourage natural center control and piece development
     getPSTValue(type, color, row, col) {
-        // Normalize coordinates for white
         const r = color === 'w' ? 7 - row : row;
         const c = col;
 

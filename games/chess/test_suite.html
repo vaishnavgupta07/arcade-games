@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Royal Kingdom Chess - Automated Test Suite</title>
+    <script src="lib/three.min.js"></script>
     <script src="lib/chess.min.js"></script>
+    <script src="js/chess-audio.js"></script>
     <script src="js/chess-engine.js"></script>
     <script src="js/chess-ai.js"></script>
+    <script src="js/chess-3d.js"></script>
     <script src="js/chess-progression.js"></script>
     <script src="js/chess-timer.js"></script>
     <script src="js/chess-lessons.js"></script>
@@ -201,6 +204,38 @@
                 }
             });
             assert(lessonsValid, "All 13 lessons have required attributes (id, title, fen, expectedMove, objective)");
+
+            // TEST 14: All 6 3D Realms Defined & Configured
+            const requiredRealms = ['royal', 'forest', 'frozen', 'dragon', 'celestial', 'temple'];
+            assert(Object.keys(Chess3D.REALMS).length === 6, "Exactly 6 3D environments are configured");
+            let realmsValid = true;
+            requiredRealms.forEach(id => {
+                const realm = Chess3D.REALMS[id];
+                if (!realm || !realm.name || !realm.bgColor || !realm.sunColor || !realm.lightSqColor || !realm.darkSqColor) {
+                    realmsValid = false;
+                }
+            });
+            assert(realmsValid, "All 6 environments possess complete lighting, fog, and board material specifications");
+
+            // TEST 15: Progression Preserved Across Environment Changes
+            // Ensure level unlocks and valid wins are NEVER reset by changing environment
+            const envTestProg = new ChessProgression();
+            assert(envTestProg.isLevelUnlocked('medium') === true, "Medium remains UNLOCKED after changing active environment");
+            localStorage.setItem('rk_active_environment', 'forest');
+            const envReloadProg = new ChessProgression();
+            assert(envReloadProg.isLevelUnlocked('medium') === true, "Changing environment to Enchanted Forest maintains unlocked tiers");
+            assert(envReloadProg.getValidWins('easy') === 2, "Win history intact across environment transitions");
+
+            // TEST 16: AI Humanized Cadence & Speed Configuration
+            const speedAI = new ChessAI();
+            speedAI.setResponseSpeed('fast');
+            assert(speedAI.getResponseSpeed() === 'fast', "AI speed successfully sets to 'fast'");
+            assert(speedAI.getTargetDelay() < 1500, "Fast speed generates sub-1.5s target delay");
+            speedAI.setResponseSpeed('relaxed');
+            assert(speedAI.getResponseSpeed() === 'relaxed', "AI speed successfully sets to 'relaxed'");
+            assert(speedAI.getTargetDelay() >= 4000, "Relaxed speed generates 4s+ tournament target delay");
+            speedAI.setResponseSpeed('natural');
+            assert(speedAI.getResponseSpeed() === 'natural', "Natural speed restored (2.2s - 3.4s standard cadence)");
 
             // Output Results Summary
             resultsEl.innerHTML = `

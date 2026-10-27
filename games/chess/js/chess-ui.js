@@ -1,6 +1,7 @@
 /**
- * Royal Kingdom Chess - Main UI Controller & Coordinator
- * Orchestrates Engine, 3D/2D views, Stockfish/Minimax AI, Clocks, Onboarding & Progression.
+ * Royal Kingdom Chess - Main UI Controller & Multi-Realm Coordinator
+ * Orchestrates Engine, 3D/2D views, 6 Living Realms, Stockfish/Minimax AI with Humanized Cadence,
+ * Clocks, Onboarding, Game Modes, Progression & Comprehensive Settings.
  */
 
 class ChessGameController {
@@ -11,14 +12,15 @@ class ChessGameController {
         this.timer = new ChessTimer();
 
         // Game Configuration & State
-        this.currentMode = 'ai'; // 'ai' | 'local' | 'practice' | 'lesson'
-        this.playerColor = 'w';  // Player's color in vs AI
+        this.currentMode = 'ai'; // 'ai' | 'local' | 'practice' | 'lesson' | 'timed'
+        this.playerColor = 'w';
         this.activeDifficulty = 'easy';
         this.is3D = true;
         this.currentMatchId = null;
         this.matchStartTime = null;
         this.isCompetitive = true;
-        this.pendingPromotion = null; // { from, to }
+        this.pendingPromotion = null;
+        this.currentEnvironment = localStorage.getItem('rk_active_environment') || 'royal';
 
         // Review Mode State
         this.isReviewing = false;
@@ -36,6 +38,11 @@ class ChessGameController {
 
         // Check onboarding
         this.checkOnboarding();
+
+        // Start ambient sound if enabled
+        if (ChessAudio.isAmbientEnabled()) {
+            ChessAudio.startAmbient(this.currentEnvironment);
+        }
     }
 
     initDOMRefs() {
@@ -43,6 +50,8 @@ class ChessGameController {
         this.viewport2DContainer = document.getElementById('viewport2D');
         this.statusBadge = document.getElementById('statusBadge');
         this.statusText = document.getElementById('statusText');
+        this.statusSpinner = document.getElementById('statusSpinner');
+        this.currentRealmBadge = document.getElementById('currentRealmBadge');
 
         // Players & Clocks
         this.cardTop = document.getElementById('cardTop');
@@ -64,18 +73,20 @@ class ChessGameController {
 
         // Modals
         this.onboardingModal = document.getElementById('onboardingModal');
+        this.modeModal = document.getElementById('modeModal');
+        this.envModal = document.getElementById('envModal');
         this.setupModal = document.getElementById('setupModal');
+        this.settingsModal = document.getElementById('settingsModal');
         this.resultModal = document.getElementById('resultModal');
         this.unlockModal = document.getElementById('unlockModal');
         this.promotionModal = document.getElementById('promotionModal');
         this.lessonModal = document.getElementById('lessonModal');
-        this.achievementsModal = document.getElementById('achievementsModal');
     }
 
     initViewports() {
-        // Initialize 3D Viewport
+        // Initialize 3D Viewport with persistent realm
         try {
-            this.view3D = new Chess3D(this.viewport3DContainer, (sq) => this.handleSquareClick(sq));
+            this.view3D = new Chess3D(this.viewport3DContainer, (sq) => this.handleSquareClick(sq), this.currentEnvironment);
         } catch (e) {
             console.warn('3D initialization failed, defaulting to 2D view:', e);
             this.is3D = false;
@@ -84,6 +95,7 @@ class ChessGameController {
         // Initialize 2D Viewport
         this.view2D = new Chess2D(this.viewport2DContainer, (sq) => this.handleSquareClick(sq));
         this.updateViewVisibility();
+        this.updateRealmBadge();
     }
 
     updateViewVisibility() {
@@ -109,6 +121,174 @@ class ChessGameController {
         this.updateViewVisibility();
     }
 
+    updateRealmBadge() {
+        if (this.currentRealmBadge && Chess3D.REALMS[this.currentEnvironment]) {
+            this.currentRealmBadge.innerText = Chess3D.REALMS[this.currentEnvironment].name;
+        }
+    }
+
+    // =========================================================================
+    // ENVIRONMENT SELECTION (6 LIVING 3D REALMS)
+    // =========================================================================
+    openEnvironmentModal() {
+        this.renderEnvironmentCards();
+        this.openModal('envModal');
+    }
+
+    renderEnvironmentCards() {
+        const grid = document.getElementById('envCardsGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const realms = Object.values(Chess3D.REALMS);
+        realms.forEach(realm => {
+            const isSelected = (realm.id === this.currentEnvironment);
+            const card = document.createElement('div');
+            card.className = `rk-env-card ${isSelected ? 'selected' : ''}`;
+            card.onclick = () => this.selectEnvironment(realm.id);
+
+            // Realm icons & gradient art
+            let iconClass = 'fa-crown';
+            let gradientCss = 'linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(76, 29, 149, 0.3))';
+
+            switch (realm.id) {
+                case 'forest':
+                    iconClass = 'fa-tree';
+                    gradientCss = 'linear-gradient(135deg, rgba(34, 139, 34, 0.3), rgba(18, 50, 24, 0.6))';
+                    break;
+                case 'frozen':
+                    iconClass = 'fa-snowflake';
+                    gradientCss = 'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(20, 36, 68, 0.6))';
+                    break;
+                case 'dragon':
+                    iconClass = 'fa-dragon';
+                    gradientCss = 'linear-gradient(135deg, rgba(255, 69, 0, 0.3), rgba(40, 10, 10, 0.7))';
+                    break;
+                case 'celestial':
+                    iconClass = 'fa-star-and-crescent';
+                    gradientCss = 'linear-gradient(135deg, rgba(147, 51, 234, 0.35), rgba(16, 12, 38, 0.7))';
+                    break;
+                case 'temple':
+                    iconClass = 'fa-archway';
+                    gradientCss = 'linear-gradient(135deg, rgba(218, 165, 32, 0.3), rgba(46, 30, 18, 0.7))';
+                    break;
+            }
+
+            card.innerHTML = `
+                <div class="rk-env-thumb" style="background: ${gradientCss};">
+                    <i class="fas ${iconClass}"></i>
+                    ${isSelected ? '<span class="rk-env-active-badge"><i class="fas fa-check"></i> Active</span>' : ''}
+                </div>
+                <div class="rk-env-body">
+                    <h4 class="rk-env-title">${realm.name}</h4>
+                    <p class="rk-env-desc">${this.getRealmDescription(realm.id)}</p>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    getRealmDescription(envId) {
+        switch (envId) {
+            case 'forest':
+                return 'Sunlit canopy, woodland pines, gentle leaf particles, and antique birch board.';
+            case 'frozen':
+                return 'Snowy fortress, frosted ice battlements, falling snow, and arctic crystal board.';
+            case 'dragon':
+                return 'Volcanic mountain fortress, rising fire embers, and glowing lava basalt board.';
+            case 'celestial':
+                return 'Cosmic nebulae, floating orbit rings, stardust particles, and lapis lazuli board.';
+            case 'temple':
+                return 'Ancient stone pillars, warm oil lanterns, incense dust, and carved limestone board.';
+            case 'royal':
+            default:
+                return 'Regal stone castle, grand candlelight, floating gold dust, and alabaster marble board.';
+        }
+    }
+
+    selectEnvironment(envId) {
+        if (!Chess3D.REALMS[envId]) return;
+        this.currentEnvironment = envId;
+        localStorage.setItem('rk_active_environment', envId);
+
+        if (this.is3D && this.view3D) {
+            this.view3D.setEnvironment(envId);
+        }
+        if (ChessAudio.isAmbientEnabled()) {
+            ChessAudio.startAmbient(envId);
+        }
+
+        this.updateRealmBadge();
+        this.renderEnvironmentCards();
+        this.closeModal('envModal');
+    }
+
+    // =========================================================================
+    // GAME MODE SELECTION MODAL
+    // =========================================================================
+    openGameModeModal() {
+        this.openModal('modeModal');
+    }
+
+    selectGameMode(mode) {
+        this.closeModal('modeModal');
+        this.currentMode = mode;
+
+        if (mode === 'lesson') {
+            this.startLessons(0);
+        } else if (mode === 'timed') {
+            document.querySelector('input[name="gameMode"][value="ai"]').checked = true;
+            document.getElementById('timePresetSelect').value = '5';
+            this.openSetupModal();
+        } else {
+            const radio = document.querySelector(`input[name="gameMode"][value="${mode}"]`);
+            if (radio) radio.checked = true;
+            this.openSetupModal();
+        }
+    }
+
+    // =========================================================================
+    // COMPREHENSIVE SETTINGS MODAL
+    // =========================================================================
+    openSettingsModal() {
+        const qualitySelect = document.getElementById('settingQuality');
+        if (qualitySelect) qualitySelect.value = this.view3D ? this.view3D.graphicsQuality : 'high';
+
+        const speedSelect = document.getElementById('settingAISpeed');
+        if (speedSelect) speedSelect.value = this.ai.getResponseSpeed();
+
+        const ambientCheck = document.getElementById('settingAmbientToggle');
+        if (ambientCheck) ambientCheck.checked = ChessAudio.isAmbientEnabled();
+
+        this.openModal('settingsModal');
+    }
+
+    saveSettings() {
+        const quality = document.getElementById('settingQuality')?.value || 'high';
+        if (this.view3D) this.view3D.setQuality(quality);
+
+        const speed = document.getElementById('settingAISpeed')?.value || 'natural';
+        this.ai.setResponseSpeed(speed);
+
+        const isAmbient = document.getElementById('settingAmbientToggle')?.checked;
+        if (isAmbient !== ChessAudio.isAmbientEnabled()) {
+            ChessAudio.toggleAmbient();
+            if (isAmbient) ChessAudio.startAmbient(this.currentEnvironment);
+            else ChessAudio.stopAmbient();
+        }
+
+        const ambVol = document.getElementById('settingAmbientVol')?.value || 0.35;
+        ChessAudio.setAmbientVolume(ambVol);
+
+        const sfxVol = document.getElementById('settingSFXVol')?.value || 0.8;
+        ChessAudio.setSFXVolume(sfxVol);
+
+        this.closeModal('settingsModal');
+    }
+
+    // =========================================================================
+    // TIMERS & HUMANIZED AI CADENCE
+    // =========================================================================
     bindTimerListeners() {
         this.timer.setListeners({
             onTick: (data) => {
@@ -123,7 +303,6 @@ class ChessGameController {
                     this.clockTop.innerText = whiteClock;
                 }
 
-                // Low time alert
                 this.clockBottom.classList.toggle('low-time', data.rawMs[this.playerColor] < 15000 && data.isTimed);
                 const oppColor = this.playerColor === 'w' ? 'b' : 'w';
                 this.clockTop.classList.toggle('low-time', data.rawMs[oppColor] < 15000 && data.isTimed);
@@ -138,18 +317,21 @@ class ChessGameController {
         this.ai.setThinkingListener((isThinking) => {
             if (isThinking) {
                 this.statusBadge.className = 'rk-status-badge thinking';
-                this.statusText.innerText = 'Royal AI is calculating...';
+                if (this.statusSpinner) this.statusSpinner.style.display = 'inline-block';
             } else {
+                if (this.statusSpinner) this.statusSpinner.style.display = 'none';
                 this.updateTurnStatus();
             }
+        });
+
+        this.ai.setThinkingStepListener((stepMsg) => {
+            this.statusText.innerText = stepMsg;
         });
     }
 
     bindEvents() {
-        // Toggle view
         document.getElementById('viewToggleBtn').addEventListener('click', () => this.toggle2D3D());
 
-        // Top-down camera toggle
         document.getElementById('topDownBtn').addEventListener('click', () => {
             if (this.is3D && this.view3D) {
                 const isTD = this.view3D.toggleTopDown();
@@ -157,10 +339,8 @@ class ChessGameController {
             }
         });
 
-        // Fullscreen
         document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
 
-        // Promotion pieces
         document.querySelectorAll('.rk-promo-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const pieceType = btn.dataset.piece;
@@ -168,7 +348,6 @@ class ChessGameController {
             });
         });
 
-        // Setup modal difficulty ladder clicks
         document.getElementById('ladderContainer').addEventListener('click', (e) => {
             const item = e.target.closest('.rk-ladder-item');
             if (item && !item.classList.contains('locked')) {
@@ -178,7 +357,6 @@ class ChessGameController {
             }
         });
 
-        // Review buttons
         document.getElementById('reviewStart').addEventListener('click', () => this.goToReviewStep(0));
         document.getElementById('reviewPrev').addEventListener('click', () => this.goToReviewStep(this.reviewIndex - 1));
         document.getElementById('reviewNext').addEventListener('click', () => this.goToReviewStep(this.reviewIndex + 1));
@@ -212,8 +390,7 @@ class ChessGameController {
         this.closeModal('onboardingModal');
 
         if (level === 'beginner') {
-            // Offer guided lessons
-            this.startLessons();
+            this.startLessons(0);
         } else {
             this.openSetupModal();
         }
@@ -263,12 +440,11 @@ class ChessGameController {
 
         this.currentMode = mode;
         this.playerColor = color === 'random' ? (Math.random() < 0.5 ? 'w' : 'b') : color;
-        this.isCompetitive = (mode === 'ai'); // Practice / Local is unranked
+        this.isCompetitive = (mode === 'ai');
         this.currentMatchId = 'match_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
         this.matchStartTime = Date.now();
         this.isReviewing = false;
 
-        // Configure Timer
         let minutes = 0;
         let increment = 0;
         switch (timePreset) {
@@ -278,8 +454,8 @@ class ChessGameController {
             case '10': minutes = 10; increment = 5; break;
             case '15': minutes = 15; increment = 10; break;
             case 'custom':
-                minutes = parseFloat(document.getElementById('customMinutesInput').value) || 5;
-                increment = parseInt(document.getElementById('customIncrementInput').value, 10) || 0;
+                minutes = parseFloat(document.getElementById('customMinutesInput')?.value) || 5;
+                increment = parseInt(document.getElementById('customIncrementInput')?.value, 10) || 0;
                 break;
             default: minutes = 0; increment = 0; break;
         }
@@ -296,20 +472,16 @@ class ChessGameController {
         this.legalMoves = [];
         this.lastMove = null;
 
-        // Board orientation
         if (this.view3D) this.view3D.setOrientation(this.playerColor);
         this.view2D.setOrientation(this.playerColor);
 
-        // Update UI HUD Players
         this.updateHUDPlayers();
         this.renderMovesList();
         this.renderBoard();
         this.updateTurnStatus();
 
-        // Start timer
         this.timer.start('w');
 
-        // If player chose Black and playing AI, AI makes the opening move
         if (this.currentMode === 'ai' && this.playerColor === 'b') {
             this.triggerAIMove();
         }
@@ -320,18 +492,18 @@ class ChessGameController {
             const profile = this.ai.difficultyProfiles[this.activeDifficulty] || { name: 'Normal' };
             if (this.playerColor === 'w') {
                 this.nameBottom.innerText = 'You (White)';
-                this.subBottom.innerText = 'Challenger';
-                this.nameTop.innerText = `Royal Engine (${profile.name})`;
-                this.subTop.innerText = 'Stockfish AI';
+                this.subBottom.innerText = 'Realm Challenger';
+                this.nameTop.innerText = `Royal AI (${profile.name})`;
+                this.subTop.innerText = 'Stockfish Engine';
             } else {
                 this.nameBottom.innerText = 'You (Black)';
-                this.subBottom.innerText = 'Challenger';
-                this.nameTop.innerText = `Royal Engine (${profile.name})`;
-                this.subTop.innerText = 'Stockfish AI';
+                this.subBottom.innerText = 'Realm Challenger';
+                this.nameTop.innerText = `Royal AI (${profile.name})`;
+                this.subTop.innerText = 'Stockfish Engine';
             }
         } else if (this.currentMode === 'local') {
             this.nameBottom.innerText = 'White Player';
-            this.subBottom.innerText = 'Local Challenger';
+            this.subBottom.innerText = 'Local Defender';
             this.nameTop.innerText = 'Black Player';
             this.subTop.innerText = 'Local Challenger';
         } else {
@@ -349,12 +521,10 @@ class ChessGameController {
         if (this.isReviewing) return;
         const currentTurn = this.engine.turn();
 
-        // Ignore clicks if AI is calculating
         if (this.currentMode === 'ai' && currentTurn !== this.playerColor) {
             return;
         }
 
-        // If clicking on an already selected square, deselect
         if (this.selectedSquare === square) {
             this.selectedSquare = null;
             this.legalMoves = [];
@@ -362,10 +532,8 @@ class ChessGameController {
             return;
         }
 
-        // Check if clicked square is a destination of a legal move
         const moveAttempt = this.legalMoves.find(m => m.to === square);
         if (moveAttempt) {
-            // Check for Pawn Promotion
             if (moveAttempt.flags.includes('p') || (moveAttempt.piece === 'p' && (square[1] === '8' || square[1] === '1'))) {
                 this.pendingPromotion = { from: this.selectedSquare, to: square };
                 this.openModal('promotionModal');
@@ -376,7 +544,6 @@ class ChessGameController {
             return;
         }
 
-        // Otherwise select piece on square if it matches current turn
         const piece = this.engine.getPieceAt(square);
         if (piece && piece.color === currentTurn) {
             this.selectedSquare = square;
@@ -406,7 +573,6 @@ class ChessGameController {
         this.legalMoves = [];
         this.lastMove = { from, to };
 
-        // Audio & Animation
         if (move.captured) ChessAudio.playCapture();
         else ChessAudio.playMove();
 
@@ -428,21 +594,18 @@ class ChessGameController {
         this.updateCapturedAndAdvantage();
         this.updateTurnStatus();
 
-        // Check for Game Over
         const overStatus = this.engine.isGameOver();
         if (overStatus.isOver) {
             this.handleGameOver(overStatus.result, overStatus.reason);
             return;
         }
 
-        // If local 2-player mode with auto-rotate
-        if (this.currentMode === 'local' && document.getElementById('autoRotateCheck')?.checked) {
+        if (this.currentMode === 'local' && document.getElementById('settingAutoRotate')?.checked) {
             const nextTurn = this.engine.turn();
             if (this.view3D) this.view3D.setOrientation(nextTurn);
             this.view2D.setOrientation(nextTurn);
         }
 
-        // If AI's turn
         if (this.currentMode === 'ai' && this.engine.turn() !== this.playerColor) {
             this.triggerAIMove();
         }
@@ -497,12 +660,12 @@ class ChessGameController {
         const isLoss = (result === 'white_win' && this.playerColor === 'b') || (result === 'black_win' && this.playerColor === 'w');
 
         if (isWin) {
-            modalTitle = 'VICTORIOUS KINGDOM!';
+            modalTitle = 'VICTORIOUS REALM!';
             modalDesc = `Superb tactical triumph! Opponent fell to ${reason.replace('_', ' ')}.`;
             crestClass = 'fa-trophy';
             ChessAudio.playVictory();
         } else if (isLoss) {
-            modalTitle = 'THE KINGDOM HAS FALLEN';
+            modalTitle = 'THE REALM HAS FALLEN';
             modalDesc = `Defeated by ${reason.replace('_', ' ')}. Reflect on the battlefield and strike back!`;
             crestClass = 'fa-skull';
             ChessAudio.playDefeat();
@@ -512,7 +675,6 @@ class ChessGameController {
             crestClass = 'fa-handshake';
         }
 
-        // Record progression in competitive mode
         if (this.isCompetitive && this.currentMode === 'ai') {
             const outcome = this.progression.recordMatch({
                 id: this.currentMatchId,
@@ -527,14 +689,12 @@ class ChessGameController {
             });
 
             if (outcome.newlyUnlockedLevel) {
-                // Celebrate newly unlocked tier!
                 ChessAudio.playUnlock();
                 document.getElementById('unlockTierName').innerText = outcome.newlyUnlockedLevel.name;
                 this.openModal('unlockModal');
             }
         }
 
-        // Populate Result Modal
         document.getElementById('resultModalTitle').innerText = modalTitle;
         document.getElementById('resultModalDesc').innerText = modalDesc;
         document.getElementById('resultModalCrest').className = `fas ${crestClass} rk-crest-icon`;
@@ -557,7 +717,6 @@ class ChessGameController {
 
     offerDraw() {
         if (this.currentMode === 'ai') {
-            // AI evaluates if position is equal
             const diff = Math.abs(this.engine.getMaterialDifference().difference);
             if (diff <= 1) {
                 alert('The Royal AI accepts your honorable draw offer.');
@@ -575,13 +734,12 @@ class ChessGameController {
     undoMove() {
         if (!this.engine.moveHistory.length) return;
         if (this.currentMode === 'ai') {
-            // Undo AI move and player move
             this.engine.undo();
             this.engine.undo();
         } else {
             this.engine.undo();
         }
-        this.isCompetitive = false; // Disqualify from progression wins
+        this.isCompetitive = false;
         this.lastMove = null;
         this.selectedSquare = null;
         this.legalMoves = [];
@@ -644,7 +802,6 @@ class ChessGameController {
             this.statusText.innerText = isPlayerTurn ? 'Your Turn' : 'Opponent Moving...';
         }
 
-        // Active turn cards
         const isBottomActive = (this.playerColor === turn);
         this.cardBottom.classList.toggle('active-turn', isBottomActive);
         this.cardTop.classList.toggle('active-turn', !isBottomActive);
@@ -674,10 +831,8 @@ class ChessGameController {
     updateCapturedAndAdvantage() {
         const captured = this.engine.capturedPieces;
         const diff = this.engine.getMaterialDifference();
-
         const symbols = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' };
 
-        // Top player captured
         const topColor = this.playerColor === 'w' ? 'b' : 'w';
         const bottomColor = this.playerColor;
 
@@ -693,9 +848,6 @@ class ChessGameController {
         }
     }
 
-    // =========================================================================
-    // GAME REVIEW CONTROLLER
-    // =========================================================================
     startReviewMode() {
         this.closeModal('resultModal');
         this.isReviewing = true;
@@ -765,7 +917,6 @@ class ChessGameController {
         fb.innerText = lesson.hint;
     }
 
-    // Modal Helpers
     openModal(id) {
         const modal = document.getElementById(id);
         if (modal) modal.classList.add('active');
@@ -777,7 +928,6 @@ class ChessGameController {
     }
 }
 
-// Global bootstrap on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     window.chessGame = new ChessGameController();
 });

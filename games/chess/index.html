@@ -31,11 +31,17 @@
             <button class="arcade-btn arcade-btn-icon arcade-sound-btn" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
                 <i class="fas fa-volume-up"></i>
             </button>
-            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openSetupModal()">
-                <i class="fas fa-cog"></i> <span class="hide-mobile">Match Setup</span>
+            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openEnvironmentModal()" title="Change 3D Realm Environment">
+                <i class="fas fa-mountain"></i> <span class="hide-mobile">Realm: <span id="currentRealmBadge">Royal Kingdom</span></span>
             </button>
-            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.startLessons(0)">
-                <i class="fas fa-graduation-cap"></i> <span class="hide-mobile">Learn Chess</span>
+            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openGameModeModal()" title="Select Game Mode">
+                <i class="fas fa-gamepad"></i> <span class="hide-mobile">Game Modes</span>
+            </button>
+            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openSettingsModal()" title="Settings & Preferences">
+                <i class="fas fa-sliders-h"></i> <span class="hide-mobile">Settings</span>
+            </button>
+            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.startLessons(0)" title="Interactive Lessons">
+                <i class="fas fa-graduation-cap"></i> <span class="hide-mobile">Learn</span>
             </button>
             <a href="../../index.html" class="arcade-btn arcade-btn-danger" title="Exit to Hub">
                 <i class="fas fa-door-open"></i> <span class="hide-mobile">Exit</span>
@@ -340,6 +346,153 @@
                 </button>
                 <button class="rk-btn rk-btn-danger" onclick="window.chessGame.closeModal('lessonModal')">
                     Exit Lessons
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Environment Selection Modal (6 Living 3D Realms) -->
+    <div class="rk-modal-backdrop" id="envModal">
+        <div class="rk-modal-card rk-env-modal-card">
+            <div class="rk-crest-icon"><i class="fas fa-mountain"></i></div>
+            <h2 class="rk-modal-title">Select 3D Realm Environment</h2>
+            <p class="rk-modal-desc">
+                Choose your battlefield atmosphere. Transforms the 3D background, lighting, board materials, and procedural acoustics.
+            </p>
+
+            <div class="rk-env-grid" id="envCardsGrid"></div>
+
+            <div style="display:flex; justify-content:center; gap:0.75rem;">
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.closeModal('envModal')">
+                    <i class="fas fa-check"></i> Confirm Realm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Game Mode Selection Modal -->
+    <div class="rk-modal-backdrop" id="modeModal">
+        <div class="rk-modal-card" style="max-width:680px;">
+            <div class="rk-crest-icon"><i class="fas fa-gamepad"></i></div>
+            <h2 class="rk-modal-title">Choose Game Mode</h2>
+            <p class="rk-modal-desc">Select how you wish to experience Royal Kingdom Chess:</p>
+
+            <div class="rk-modes-grid">
+                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('ai')">
+                    <div class="icon-box"><i class="fas fa-robot"></i></div>
+                    <div>
+                        <h4>Play Against AI</h4>
+                        <p>Challenge the Stockfish engine across 6 progressive tiers with humanized thinking cadence.</p>
+                    </div>
+                </div>
+
+                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('local')">
+                    <div class="icon-box"><i class="fas fa-users"></i></div>
+                    <div>
+                        <h4>Two-Player Local Chess</h4>
+                        <p>Pass &amp; play with a friend on this device with optional auto board rotation.</p>
+                    </div>
+                </div>
+
+                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('timed')">
+                    <div class="icon-box"><i class="fas fa-stopwatch"></i></div>
+                    <div>
+                        <h4>Timed Chess</h4>
+                        <p>Competitive bullet, blitz, rapid, and tournament clocks with move increments.</p>
+                    </div>
+                </div>
+
+                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('practice')">
+                    <div class="icon-box"><i class="fas fa-magic"></i></div>
+                    <div>
+                        <h4>Practice Mode</h4>
+                        <p>Relaxed sandbox with unlimited takebacks and grandmaster move hints.</p>
+                    </div>
+                </div>
+
+                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('lesson')" style="grid-column: 1 / -1;">
+                    <div class="icon-box" style="background:linear-gradient(135deg, rgba(16,185,129,0.3), rgba(76,29,149,0.4)); color:#34d399;"><i class="fas fa-graduation-cap"></i></div>
+                    <div>
+                        <h4>Learn Chess (13 Interactive Lessons)</h4>
+                        <p>Step-by-step interactive guidance covering piece movements, castling, en passant, promotion, and tactical opening principles.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.closeModal('modeModal')">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- 9. Comprehensive Settings Modal -->
+    <div class="rk-modal-backdrop" id="settingsModal">
+        <div class="rk-modal-card rk-settings-card">
+            <div class="rk-crest-icon"><i class="fas fa-sliders-h"></i></div>
+            <h2 class="rk-modal-title">Settings &amp; Preferences</h2>
+            <p class="rk-modal-desc">Customize 3D graphics, ambient acoustics, and AI cadence:</p>
+
+            <div class="rk-settings-list">
+                <div class="rk-setting-row">
+                    <div class="rk-setting-info">
+                        <div class="rk-setting-title">3D Graphics Quality</div>
+                        <div class="rk-setting-sub">Adjust shadow rendering, particle counts, and antialiasing</div>
+                    </div>
+                    <select id="settingQuality" class="rk-select">
+                        <option value="high">High (Full Shadows &amp; Particles)</option>
+                        <option value="medium">Medium (Balanced)</option>
+                        <option value="low">Low (Mobile Optimized / Fast)</option>
+                    </select>
+                </div>
+
+                <div class="rk-setting-row">
+                    <div class="rk-setting-info">
+                        <div class="rk-setting-title">AI Thinking Cadence</div>
+                        <div class="rk-setting-sub">Control AI response presentation delay for a natural human pace</div>
+                    </div>
+                    <select id="settingAISpeed" class="rk-select">
+                        <option value="fast">Fast (0.8s - 1.3s)</option>
+                        <option value="natural" selected>Natural Pace (2.2s - 3.4s)</option>
+                        <option value="relaxed">Relaxed / Deep (4.2s - 6.0s)</option>
+                    </select>
+                </div>
+
+                <div class="rk-setting-row">
+                    <div class="rk-setting-info">
+                        <div class="rk-setting-title">Ambient Realm Soundscape</div>
+                        <div class="rk-setting-sub">Synthesized environmental atmospheric acoustics</div>
+                    </div>
+                    <input type="checkbox" id="settingAmbientToggle" style="accent-color:var(--rk-gold-bright); transform:scale(1.3); cursor:pointer;">
+                </div>
+
+                <div class="rk-setting-row">
+                    <div class="rk-setting-info">
+                        <div class="rk-setting-title">Ambient Volume</div>
+                        <div class="rk-setting-sub">Background wind, forest chimes, or castle strings</div>
+                    </div>
+                    <input type="range" id="settingAmbientVol" min="0" max="1" step="0.05" value="0.35" class="rk-range-slider">
+                </div>
+
+                <div class="rk-setting-row">
+                    <div class="rk-setting-info">
+                        <div class="rk-setting-title">Sound Effects Volume</div>
+                        <div class="rk-setting-sub">Piece placement, captures, checks, and victory fanfare</div>
+                    </div>
+                    <input type="range" id="settingSFXVol" min="0" max="1" step="0.05" value="0.8" class="rk-range-slider">
+                </div>
+
+                <div class="rk-setting-row">
+                    <div class="rk-setting-info">
+                        <div class="rk-setting-title">Auto-Rotate Board</div>
+                        <div class="rk-setting-sub">Automatically flip board in Two-Player Local matches</div>
+                    </div>
+                    <input type="checkbox" id="settingAutoRotate" style="accent-color:var(--rk-gold-bright); transform:scale(1.3); cursor:pointer;">
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.saveSettings()">
+                    <i class="fas fa-save"></i> Save Preferences
                 </button>
             </div>
         </div>

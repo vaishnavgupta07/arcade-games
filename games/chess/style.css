@@ -769,6 +769,230 @@ body.rk-body {
     color: var(--rk-gold-bright);
 }
 
+/* ==========================================================================
+   Environment Selection (6 Living 3D Realms)
+   ========================================================================== */
+.rk-env-modal-card {
+    max-width: 860px;
+}
+
+.rk-env-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+    text-align: left;
+}
+
+.rk-env-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid var(--rk-border-light);
+    border-radius: 1.25rem;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.rk-env-card:hover {
+    border-color: var(--rk-gold);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px var(--rk-gold-glow);
+}
+
+.rk-env-card.selected {
+    border-color: var(--rk-gold-bright);
+    box-shadow: 0 0 25px var(--rk-gold-glow);
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.rk-env-thumb {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    color: #ffffff;
+    position: relative;
+    border-bottom: 1px solid var(--rk-border-light);
+}
+
+.rk-env-active-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(16, 185, 129, 0.9);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.rk-env-body {
+    padding: 1rem 1.15rem;
+    flex: 1;
+}
+
+.rk-env-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 0.35rem;
+}
+
+.rk-env-desc {
+    font-size: 0.8rem;
+    color: var(--rk-text-dim);
+    line-height: 1.45;
+}
+
+/* ==========================================================================
+   Game Mode Selector Modal
+   ========================================================================== */
+.rk-modes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+    text-align: left;
+}
+
+.rk-mode-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid var(--rk-border-light);
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.rk-mode-card:hover {
+    border-color: var(--rk-gold);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px var(--rk-gold-glow);
+    background: rgba(212, 175, 55, 0.06);
+}
+
+.rk-mode-card .icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(76, 29, 149, 0.4));
+    border: 1px solid var(--rk-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--rk-gold-bright);
+    flex-shrink: 0;
+}
+
+.rk-mode-card h4 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+.rk-mode-card p {
+    font-size: 0.78rem;
+    color: var(--rk-text-dim);
+    line-height: 1.4;
+}
+
+/* ==========================================================================
+   Comprehensive Settings Panel
+   ========================================================================== */
+.rk-settings-card {
+    max-width: 650px;
+}
+
+.rk-settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin: 1.25rem 0;
+    text-align: left;
+}
+
+.rk-setting-row {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--rk-border-light);
+    border-radius: 1rem;
+    padding: 0.85rem 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.rk-setting-info {
+    flex: 1;
+}
+
+.rk-setting-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.15rem;
+}
+
+.rk-setting-sub {
+    font-size: 0.75rem;
+    color: var(--rk-text-dim);
+}
+
+.rk-select {
+    background: #0f1526;
+    border: 1px solid var(--rk-border-light);
+    color: #ffffff;
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.65rem;
+    font-size: 0.85rem;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.rk-select:focus {
+    border-color: var(--rk-gold);
+}
+
+.rk-range-slider {
+    accent-color: var(--rk-gold-bright);
+    width: 130px;
+    cursor: pointer;
+}
+
+/* Top Realm HUD Pill */
+.rk-realm-pill {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--rk-border);
+    border-radius: 9999px;
+    padding: 0.45rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--rk-gold-bright);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s ease;
+}
+
+.rk-realm-pill:hover {
+    border-color: var(--rk-gold-bright);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--rk-gold-glow);
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
     .rk-game-container {
@@ -792,5 +1016,10 @@ body.rk-body {
     }
     .rk-modal-card {
         padding: 1.5rem;
+    }
+    .rk-setting-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
     }
 }
