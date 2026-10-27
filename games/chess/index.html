@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Royal Kingdom Chess 3D | VG-Arcade</title>
+    <meta name="description" content="Cinematic 3D medieval royal chess game with genuine Stockfish AI, 6 progressive difficulty tiers, interactive lessons, and custom clocks.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Press+Start+2P&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../../shared/arcade.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="rk-body">
+
+    <!-- Top Navigation Header -->
+    <header class="arcade-header">
+        <a href="../../index.html" class="arcade-brand" title="Back to Arcade Zone">
+            <div class="arcade-brand-icon"><i class="fas fa-chess-knight"></i></div>
+            <span>VG-ARCADE</span>
+        </a>
+
+        <div class="arcade-stats-bar">
+            <div class="arcade-badge arcade-badge-highlight">
+                <i class="fas fa-crown"></i> <span>ROYAL KINGDOM CHESS</span>
+            </div>
+        </div>
+
+        <div class="arcade-actions">
+            <button class="arcade-btn arcade-btn-icon arcade-sound-btn" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
+                <i class="fas fa-volume-up"></i>
+            </button>
+            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openSetupModal()">
+                <i class="fas fa-cog"></i> <span class="hide-mobile">Match Setup</span>
+            </button>
+            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.startLessons(0)">
+                <i class="fas fa-graduation-cap"></i> <span class="hide-mobile">Learn Chess</span>
+            </button>
+            <a href="../../index.html" class="arcade-btn arcade-btn-danger" title="Exit to Hub">
+                <i class="fas fa-door-open"></i> <span class="hide-mobile">Exit</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Game Shell -->
+    <main class="rk-game-container">
+
+        <!-- 3D / 2D Viewport Shell -->
+        <section class="rk-viewport-card" id="viewportCard">
+            <!-- HUD Overlays -->
+            <div class="rk-viewport-overlay-top">
+                <div class="rk-status-badge" id="statusBadge">
+                    <i class="fas fa-circle-notch fa-spin" style="display:none;" id="statusSpinner"></i>
+                    <span id="statusText">Your Turn</span>
+                </div>
+
+                <div class="rk-view-controls">
+                    <button class="rk-view-btn" id="viewToggleBtn" title="Toggle 3D / 2D Board">
+                        <i class="fas fa-cubes"></i> <span id="viewModeText">2D View</span>
+                    </button>
+                    <button class="rk-view-btn" id="topDownBtn" title="Toggle Top-Down Camera">
+                        <i class="fas fa-video"></i> Top Angle
+                    </button>
+                    <button class="rk-view-btn" id="fullscreenBtn" title="Toggle Fullscreen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Three.js 3D Viewport -->
+            <div class="rk-canvas-container" id="viewport3D"></div>
+
+            <!-- Accessible 2D Fallback Viewport -->
+            <div class="rk-canvas-container" id="viewport2D" style="display:none;"></div>
+        </section>
+
+        <!-- Side Game Panel (HUD, Clocks, Moves, Actions) -->
+        <aside class="rk-side-panel">
+
+            <!-- Top Player (Opponent) Card -->
+            <div class="rk-player-card" id="cardTop">
+                <div class="rk-player-info">
+                    <div class="rk-player-avatar"><i class="fas fa-chess-king"></i></div>
+                    <div>
+                        <div class="rk-player-name" id="nameTop">Royal AI (Normal)</div>
+                        <div class="rk-player-sub" id="subTop">Stockfish Engine</div>
+                    </div>
+                </div>
+                <div class="rk-player-clock" id="clockTop">10:00</div>
+            </div>
+
+            <!-- Top Player Captured Pieces Tray -->
+            <div class="rk-captured-bar">
+                <div id="capturedTop"></div>
+                <div class="rk-material-advantage" id="advantageDisplay" style="display:none;">+0</div>
+            </div>
+
+            <!-- Move History List -->
+            <div class="rk-moves-card">
+                <div class="rk-card-header">
+                    <span><i class="fas fa-list-ol"></i> Move Notation</span>
+                    <span id="moveCountBadge">0 moves</span>
+                </div>
+                <div class="rk-moves-list" id="movesList"></div>
+
+                <!-- Review Game Navigation Controls -->
+                <div class="rk-review-nav">
+                    <button class="rk-review-btn" id="reviewStart" title="First Move"><i class="fas fa-step-backward"></i></button>
+                    <button class="rk-review-btn" id="reviewPrev" title="Previous Move"><i class="fas fa-chevron-left"></i></button>
+                    <button class="rk-review-btn" id="reviewNext" title="Next Move"><i class="fas fa-chevron-right"></i></button>
+                    <button class="rk-review-btn" id="reviewEnd" title="Latest Move"><i class="fas fa-step-forward"></i></button>
+                </div>
+            </div>
+
+            <!-- Bottom Player Captured Pieces Tray -->
+            <div class="rk-captured-bar">
+                <div id="capturedBottom"></div>
+            </div>
+
+            <!-- Bottom Player (User) Card -->
+            <div class="rk-player-card active-turn" id="cardBottom">
+                <div class="rk-player-info">
+                    <div class="rk-player-avatar" style="border-color:var(--rk-gold-bright);"><i class="fas fa-user-shield"></i></div>
+                    <div>
+                        <div class="rk-player-name" id="nameBottom">You (White)</div>
+                        <div class="rk-player-sub" id="subBottom">Kingdom Defender</div>
+                    </div>
+                </div>
+                <div class="rk-player-clock" id="clockBottom">10:00</div>
+            </div>
+
+            <!-- Game Actions Grid -->
+            <div class="rk-actions-grid">
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.suggestHint()" title="Request Move Hint">
+                    <i class="fas fa-lightbulb"></i> Hint
+                </button>
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.undoMove()" title="Takeback Move">
+                    <i class="fas fa-undo"></i> Undo
+                </button>
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.offerDraw()" title="Offer Draw">
+                    <i class="fas fa-handshake"></i> Draw
+                </button>
+                <button class="rk-btn rk-btn-danger" onclick="window.chessGame.resign()" title="Resign Match">
+                    <i class="fas fa-flag"></i> Resign
+                </button>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- ======================================================================
+         MODALS
+         ====================================================================== -->
+
+    <!-- 1. Onboarding Experience Question Modal -->
+    <div class="rk-modal-backdrop" id="onboardingModal">
+        <div class="rk-modal-card">
+            <div class="rk-crest-icon"><i class="fas fa-crown"></i></div>
+            <h2 class="rk-modal-title">Welcome to Royal Kingdom</h2>
+            <p class="rk-modal-desc">
+                Before entering the grand palace halls, please state your experience level with chess:
+            </p>
+
+            <div class="rk-choice-grid">
+                <div class="rk-choice-card" onclick="window.chessGame.selectExperience('beginner')">
+                    <div class="icon"><i class="fas fa-seedling"></i></div>
+                    <h4>Beginner</h4>
+                    <p>I am learning the rules. Guide me with interactive lessons, move hints, and introductory matches.</p>
+                </div>
+                <div class="rk-choice-card" onclick="window.chessGame.selectExperience('experienced')">
+                    <div class="icon"><i class="fas fa-chess"></i></div>
+                    <h4>Experienced Player</h4>
+                    <p>I know all standard chess rules. Let me challenge the progressive 6-tier AI ladder starting at Easy.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Pre-Match Setup Modal -->
+    <div class="rk-modal-backdrop" id="setupModal">
+        <div class="rk-modal-card">
+            <div class="rk-crest-icon"><i class="fas fa-chess-board"></i></div>
+            <h2 class="rk-modal-title">Match Configuration</h2>
+            <p class="rk-modal-desc">Configure your battle terms before sitting at the imperial board.</p>
+
+            <!-- Mode Selector -->
+            <div style="margin-bottom:1.25rem; text-align:left;">
+                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">GAME MODE</label>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">
+                    <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
+                        <input type="radio" name="gameMode" value="ai" checked style="margin-right:0.3rem;"> Versus AI
+                    </label>
+                    <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
+                        <input type="radio" name="gameMode" value="local" style="margin-right:0.3rem;"> 2-Player Local
+                    </label>
+                    <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
+                        <input type="radio" name="gameMode" value="practice" style="margin-right:0.3rem;"> Practice
+                    </label>
+                </div>
+            </div>
+
+            <!-- Color Selector -->
+            <div style="margin-bottom:1.25rem; text-align:left;">
+                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">YOUR PIECE COLOR</label>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">
+                    <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
+                        <input type="radio" name="playerColor" value="w" checked style="margin-right:0.3rem;"> White
+                    </label>
+                    <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
+                        <input type="radio" name="playerColor" value="b" style="margin-right:0.3rem;"> Black
+                    </label>
+                    <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
+                        <input type="radio" name="playerColor" value="random" style="margin-right:0.3rem;"> Random
+                    </label>
+                </div>
+            </div>
+
+            <!-- Time Control Selector -->
+            <div style="margin-bottom:1.25rem; text-align:left;">
+                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">CHESS CLOCK</label>
+                <select id="timePresetSelect" class="rk-btn rk-btn-ghost" style="width:100%; text-align:left; padding:0.6rem;">
+                    <option value="0">Casual (No Clock)</option>
+                    <option value="1">1 Minute (Bullet)</option>
+                    <option value="3">3 Minutes + 2s (Blitz)</option>
+                    <option value="5">5 Minutes + 3s (Rapid)</option>
+                    <option value="10" selected>10 Minutes + 5s (Classical)</option>
+                    <option value="15">15 Minutes + 10s (Tournament)</option>
+                </select>
+            </div>
+
+            <!-- 6-Tier Progression Ladder -->
+            <div style="text-align:left; margin-bottom:1.5rem;">
+                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">
+                    DIFFICULTY LADDER (2 WINS REQUIRED PER TIER)
+                </label>
+                <div class="rk-ladder-list" id="ladderContainer"></div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem;">
+                <button class="rk-btn rk-btn-primary" style="flex:1;" onclick="window.chessGame.startMatchFromSetup()">
+                    <i class="fas fa-play"></i> START MATCH
+                </button>
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.closeModal('setupModal')">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Pawn Promotion Selection Modal -->
+    <div class="rk-modal-backdrop" id="promotionModal">
+        <div class="rk-modal-card" style="max-width:440px;">
+            <div class="rk-crest-icon"><i class="fas fa-chess-queen"></i></div>
+            <h3 class="rk-modal-title">Promote Your Pawn</h3>
+            <p class="rk-modal-desc">Select the noble rank your pawn shall ascend to:</p>
+            <div class="rk-promo-grid">
+                <button class="rk-promo-btn" data-piece="q" title="Queen">♛</button>
+                <button class="rk-promo-btn" data-piece="r" title="Rook">♜</button>
+                <button class="rk-promo-btn" data-piece="b" title="Bishop">♝</button>
+                <button class="rk-promo-btn" data-piece="n" title="Knight">♞</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Match Result Screen Modal -->
+    <div class="rk-modal-backdrop" id="resultModal">
+        <div class="rk-modal-card">
+            <div id="resultModalCrest" class="fas fa-trophy rk-crest-icon"></div>
+            <h2 class="rk-modal-title" id="resultModalTitle">VICTORIOUS KINGDOM!</h2>
+            <p class="rk-modal-desc" id="resultModalDesc">Your tactical supremacy has checkmated the enemy monarch.</p>
+
+            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:1rem; margin-bottom:1.5rem;">
+                <div class="rk-choice-card" style="padding:1rem;">
+                    <div style="color:var(--rk-text-dim); font-size:0.75rem;">MOVES PLAYED</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:#fff;" id="resMovesCount">0</div>
+                </div>
+                <div class="rk-choice-card" style="padding:1rem;">
+                    <div style="color:var(--rk-text-dim); font-size:0.75rem;">MATCH DURATION</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:var(--rk-gold-bright);" id="resDuration">0s</div>
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:0.65rem;">
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.closeModal('resultModal'); window.chessGame.openSetupModal();">
+                    <i class="fas fa-redo"></i> Rematch
+                </button>
+                <button class="rk-btn rk-btn-royal" onclick="window.chessGame.startReviewMode()">
+                    <i class="fas fa-search"></i> Review Game Move-By-Move
+                </button>
+                <a href="../../index.html" class="rk-btn rk-btn-ghost">
+                    <i class="fas fa-gamepad"></i> Return to Arcade Hub
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Level Unlock Celebration Modal -->
+    <div class="rk-modal-backdrop" id="unlockModal">
+        <div class="rk-modal-card" style="border-color:var(--rk-gold-bright);">
+            <div class="rk-crest-icon" style="color:var(--rk-gold-bright);"><i class="fas fa-medal"></i></div>
+            <h2 class="rk-modal-title" style="color:var(--rk-gold-bright);">TIER UNLOCKED!</h2>
+            <p class="rk-modal-desc">
+                By earning 2 validated victories, you have conquered the previous realm and unlocked:
+            </p>
+            <div style="font-size:2rem; font-weight:900; color:#ffffff; margin-bottom:1.5rem; text-shadow:0 0 25px var(--rk-gold-bright);" id="unlockTierName">
+                Medium
+            </div>
+            <button class="rk-btn rk-btn-primary" onclick="window.chessGame.closeModal('unlockModal')">
+                <i class="fas fa-check"></i> Continue Conquest
+            </button>
+        </div>
+    </div>
+
+    <!-- 6. Interactive Lessons Curriculum Modal -->
+    <div class="rk-modal-backdrop" id="lessonModal">
+        <div class="rk-modal-card rk-lesson-modal-card">
+            <div class="rk-lesson-header">
+                <div class="rk-lesson-badge" id="lessonBadge">Lesson 1 of 13</div>
+                <h3 class="rk-modal-title" id="lessonTitle" style="text-align:left;">1. The Royal Chessboard</h3>
+                <p class="rk-modal-desc" id="lessonDesc" style="text-align:left; margin-bottom:0.75rem;"></p>
+                <div class="rk-lesson-objective-box">
+                    <i class="fas fa-bullseye" style="color:var(--rk-gold-bright);"></i>
+                    <span id="lessonObjective"></span>
+                </div>
+            </div>
+
+            <div class="rk-lesson-feedback" id="lessonFeedback"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem;">
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.showLessonHint()">
+                    <i class="fas fa-question-circle"></i> Hint
+                </button>
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.replayLesson()">
+                    <i class="fas fa-redo"></i> Reset Board
+                </button>
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.nextLesson()">
+                    Next Lesson <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="rk-btn rk-btn-danger" onclick="window.chessGame.closeModal('lessonModal')">
+                    Exit Lessons
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Libraries (Local Offline Copies) -->
+    <script src="lib/three.min.js"></script>
+    <script src="lib/chess.min.js"></script>
+    <script src="../../shared/arcade-core.js"></script>
+
+    <!-- Royal Kingdom Chess Scripts -->
+    <script src="js/chess-audio.js"></script>
+    <script src="js/chess-engine.js"></script>
+    <script src="js/chess-ai.js"></script>
+    <script src="js/chess-progression.js"></script>
+    <script src="js/chess-timer.js"></script>
+    <script src="js/chess-lessons.js"></script>
+    <script src="js/chess-2d.js"></script>
+    <script src="js/chess-3d.js"></script>
+    <script src="js/chess-ui.js"></script>
+
+</body>
+</html>

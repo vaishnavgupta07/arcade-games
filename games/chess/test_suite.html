@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Royal Kingdom Chess - Automated Test Suite</title>
+    <script src="lib/chess.min.js"></script>
+    <script src="js/chess-engine.js"></script>
+    <script src="js/chess-ai.js"></script>
+    <script src="js/chess-progression.js"></script>
+    <script src="js/chess-timer.js"></script>
+    <script src="js/chess-lessons.js"></script>
+</head>
+<body>
+    <h1>Royal Kingdom Chess Test Suite</h1>
+    <div id="results">Running tests...</div>
+
+    <script>
+        const resultsEl = document.getElementById('results');
+        const logs = [];
+        let passed = 0;
+        let failed = 0;
+
+        function assert(condition, testName) {
+            if (condition) {
+                passed++;
+                console.log(`[PASS] ${testName}`);
+                logs.push(`<div style="color:green;">✔ PASS: ${testName}</div>`);
+            } else {
+                failed++;
+                console.error(`[FAIL] ${testName}`);
+                logs.push(`<div style="color:red; font-weight:bold;">✖ FAIL: ${testName}</div>`);
+            }
+        }
+
+        async function runTests() {
+            // TEST 1: ChessEngine Basic Setup & Legal Moves
+            const engine = new ChessEngine();
+            assert(engine.turn() === 'w', "New game begins on White's turn");
+            const whiteOpeningMoves = engine.getAllLegalMoves();
+            assert(whiteOpeningMoves.length === 20, "Standard initial position has exactly 20 legal opening moves");
+
+            // TEST 2: Illegal Move Rejection
+            const illegalMove = engine.makeMove({ from: 'e2', to: 'e5' });
+            assert(illegalMove === null, "Illegal move (pawn leaping 3 squares) is rejected");
+            assert(engine.turn() === 'w', "Turn remains White after illegal move rejection");
+
+            // TEST 3: Legal Pawn Move & Knights
+            const m1 = engine.makeMove({ from: 'e2', to: 'e4' });
+            assert(m1 && m1.san === 'e4', "Legal pawn push e2-e4 succeeds");
+            assert(engine.turn() === 'b', "Turn switches to Black");
+            const m2 = engine.makeMove({ from: 'g8', to: 'f6' });
+            assert(m2 && m2.san === 'Nf6', "Legal knight leap g8-f6 succeeds");
+
+            // TEST 4: Castling (Kingside and Queenside)
+            const castleEngine = new ChessEngine();
+            castleEngine.loadFen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+            const kingsideMove = castleEngine.makeMove({ from: 'e1', to: 'g1' });
+            assert(kingsideMove && kingsideMove.san === 'O-O', "Kingside castling executes correctly");
+            const queensideBlack = castleEngine.makeMove({ from: 'e8', to: 'c8' });
+            assert(queensideBlack && queensideBlack.san === 'O-O-O', "Queenside castling executes correctly");
+
+            // TEST 5: En Passant
+            const epEngine = new ChessEngine();
+            epEngine.loadFen('8/8/8/4Pp2/8/8/8/4K2k w - f6 0 1');
+            const epMove = epEngine.makeMove({ from: 'e5', to: 'f6' });
+            assert(epMove && epMove.captured === 'p' && epMove.flags.includes('e'), "En passant capture executes correctly");
+
+            // TEST 6: Pawn Promotion
+            const promoEngine = new ChessEngine();
+            promoEngine.loadFen('8/4P3/8/8/8/8/8/4K2k w - - 0 1');
+            const promoMove = promoEngine.makeMove({ from: 'e7', to: 'e8', promotion: 'q' });
+            assert(promoMove && promoMove.promotion === 'q' && promoMove.piece === 'p', "Pawn promotion to Queen succeeds");
+
+            // TEST 7: Checkmate Detection
+            const scholarEngine = new ChessEngine();
+            scholarEngine.loadFen('r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 4');
+            const mateMove = scholarEngine.makeMove({ from: 'f3', to: 'f7' });
+            assert(mateMove && scholarEngine.inCheckmate(), "Scholar's mate position detected as checkmate");
+            const mateStatus = scholarEngine.isGameOver();
+            assert(mateStatus.isOver && mateStatus.result === 'white_win' && mateStatus.reason === 'checkmate', "GameOver status correctly reports white_win by checkmate");
+
+            // TEST 8: Stalemate Detection
+            const staleEngine = new ChessEngine();
+            staleEngine.loadFen('k7/8/1Q6/8/8/8/8/4K3 b - - 0 1');
+            assert(staleEngine.inStalemate(), "Known stalemate position detected");
+            assert(staleEngine.isGameOver().reason === 'stalemate', "GameOver status correctly reports stalemate");
+
+            // TEST 9: Insufficient Material Draw
+            const imEngine = new ChessEngine();
+            imEngine.loadFen('8/8/8/8/8/8/4k3/4K3 w - - 0 1');
+            assert(imEngine.insufficientMaterial(), "Bare kings detected as insufficient material draw");
+
+            // TEST 10: 2-Win Progression System
+            localStorage.removeItem(ChessProgression.STORAGE_KEY);
+            const progression = new ChessProgression();
+            let progState = progression.getProgress();
+            assert(progState.levels[0].unlocked === true, "Easy level is unlocked by default");
+            assert(progState.levels[1].unlocked === false, "Medium level is locked initially");
+            assert(progState.levels[2].unlocked === false, "Normal level is locked initially");
+
+            // Record 1st Win on Easy
+            const r1 = progression.recordMatch({
+                id: 'test_m1',
+                playerColor: 'w',
+                difficulty: 'easy',
+                result: 'win',
+                endReason: 'checkmate',
+                moveCount: 22,
+                durationSeconds: 120,
+                isCompetitive: true
+            });
+            assert(r1.awarded === true, "1st win recorded successfully");
+            assert(progression.isLevelUnlocked('medium') === false, "Medium remains LOCKED with only 1 win on Easy");
+
+            // Record a Loss on Easy (Must NOT count as win!)
+            const rLoss = progression.recordMatch({
+                id: 'test_loss1',
+                playerColor: 'w',
+                difficulty: 'easy',
+                result: 'loss',
+                endReason: 'checkmate',
+                moveCount: 18,
+                durationSeconds: 90,
+                isCompetitive: true
+            });
+            assert(progression.getValidWins('easy') === 1, "Loss on Easy does NOT increment wins");
+            assert(progression.isLevelUnlocked('medium') === false, "Medium remains LOCKED after a loss");
+
+            // Record a Draw on Easy (Must NOT count as win!)
+            const rDraw = progression.recordMatch({
+                id: 'test_draw1',
+                playerColor: 'w',
+                difficulty: 'easy',
+                result: 'draw',
+                endReason: 'stalemate',
+                moveCount: 40,
+                durationSeconds: 300,
+                isCompetitive: true
+            });
+            assert(progression.getValidWins('easy') === 1, "Draw on Easy does NOT increment wins");
+            assert(progression.isLevelUnlocked('medium') === false, "Medium remains LOCKED after a draw");
+
+            // Prevent Duplicate Match Submissions
+            const rDup = progression.recordMatch({
+                id: 'test_m1', // Duplicate ID
+                playerColor: 'w',
+                difficulty: 'easy',
+                result: 'win',
+                endReason: 'checkmate',
+                moveCount: 22,
+                durationSeconds: 120,
+                isCompetitive: true
+            });
+            assert(rDup.awarded === false && rDup.reason === 'duplicate_submission', "Duplicate match ID submission strictly rejected");
+
+            // Record 2nd Win on Easy -> Medium MUST UNLOCK!
+            const r2 = progression.recordMatch({
+                id: 'test_m2',
+                playerColor: 'w',
+                difficulty: 'easy',
+                result: 'win',
+                endReason: 'checkmate',
+                moveCount: 25,
+                durationSeconds: 140,
+                isCompetitive: true
+            });
+            assert(r2.awarded === true, "2nd win recorded successfully");
+            assert(r2.newlyUnlockedLevel && r2.newlyUnlockedLevel.id === 'medium', "2nd win triggers newlyUnlockedLevel = Medium");
+            assert(progression.isLevelUnlocked('medium') === true, "Medium is now officially UNLOCKED after exactly 2 wins on Easy");
+            assert(progression.isLevelUnlocked('normal') === false, "Normal remains locked until Medium has 2 wins");
+
+            // Reload Progression from storage to verify persistence
+            const reloadedProg = new ChessProgression();
+            assert(reloadedProg.isLevelUnlocked('medium') === true, "Unlock status persists across storage reload");
+            assert(reloadedProg.getValidWins('easy') === 2, "Win count of 2 persists across storage reload");
+
+            // TEST 11: Monotonic Timer Calculation & Clocks
+            const timer = new ChessTimer();
+            timer.configure({ minutes: 5, increment: 3 });
+            assert(timer.isTimed() === true, "Timer recognizes timed mode");
+            assert(timer.formatTime(timer.remainingMs.w) === '5:00', "Initial formatted clock is 5:00");
+            timer.start('w');
+            await new Promise(r => setTimeout(r, 200));
+            timer.switchTurn('b');
+            // White should have received the +3s increment
+            assert(timer.remainingMs.w > 5 * 60 * 1000 - 500, "White receives 3-second increment after move");
+            timer.destroy();
+
+            // TEST 12: Tactical AI Engine Move Generation
+            const ai = new ChessAI();
+            const testBoard = new ChessEngine();
+            const aiMove = await ai.getBestMove(testBoard, 'easy');
+            assert(aiMove !== null && testBoard.makeMove(aiMove) !== null, "AI generates legal executable move at Easy difficulty");
+
+            // TEST 13: 13 Interactive Beginner Lessons
+            assert(Array.isArray(ChessLessonsData) && ChessLessonsData.length === 13, "All 13 interactive lessons are present");
+            let lessonsValid = true;
+            ChessLessonsData.forEach(l => {
+                if (!l.id || !l.title || !l.fen || !l.expectedMove || !l.objective) {
+                    lessonsValid = false;
+                }
+            });
+            assert(lessonsValid, "All 13 lessons have required attributes (id, title, fen, expectedMove, objective)");
+
+            // Output Results Summary
+            resultsEl.innerHTML = `
+                <h2>TEST RESULTS: ${passed} PASSED, ${failed} FAILED</h2>
+                ${logs.join('')}
+            `;
+            window.testStatus = failed === 0 ? 'ALL_PASSED' : 'SOME_FAILED';
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

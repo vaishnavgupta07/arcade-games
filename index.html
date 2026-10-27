@@ -449,7 +449,7 @@
 
         <div class="arcade-stats-bar">
             <div class="arcade-badge arcade-badge-highlight">
-                <i class="fas fa-fire"></i> <span>4 PLAYABLE GAMES</span>
+                <i class="fas fa-crown" style="color:var(--arcade-yellow);"></i> <span>5 PLAYABLE GAMES</span>
             </div>
         </div>
 
@@ -473,47 +473,42 @@
             An indie browser gaming platform engineered with zero external game frameworks, real-time physics math, synthesized retro Web Audio, and responsive touch controls.
         </p>
 
-        <!-- Featured Spotlight Showcase -->
-        <div class="featured-banner">
-            <div class="featured-art">
-                <!-- Custom SVG Vector Artwork for Breakout -->
+        <!-- Featured Spotlight Showcase: Royal Kingdom Chess -->
+        <div class="featured-banner" style="border-color: rgba(212, 175, 55, 0.45); box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 0 35px rgba(212, 175, 55, 0.25);">
+            <div class="featured-art" style="background: radial-gradient(circle at 50% 50%, rgba(76, 29, 149, 0.35) 0%, rgba(9, 12, 21, 0.95) 100%);">
+                <!-- Custom SVG Vector Artwork for Royal Kingdom Chess -->
                 <svg viewBox="0 0 240 160" width="100%" height="100%">
                     <defs>
-                        <linearGradient id="paddleGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#00f0ff" />
-                            <stop offset="50%" stop-color="#ffffff" />
-                            <stop offset="100%" stop-color="#00f0ff" />
-                        </linearGradient>
+                        <radialGradient id="chessGlow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#ffd700" stop-opacity="0.3" />
+                            <stop offset="100%" stop-color="#ffd700" stop-opacity="0" />
+                        </radialGradient>
                     </defs>
-                    <!-- Brick rows -->
-                    <rect x="25" y="25" width="40" height="14" rx="3" fill="#ff007f" />
-                    <rect x="70" y="25" width="40" height="14" rx="3" fill="#ffd700" />
-                    <rect x="115" y="25" width="50" height="14" rx="3" fill="#a855f7" />
-                    <rect x="170" y="25" width="45" height="14" rx="3" fill="#00f0ff" />
-
-                    <rect x="35" y="45" width="45" height="14" rx="3" fill="#00f0ff" />
-                    <rect x="85" y="45" width="45" height="14" rx="3" fill="#ff007f" />
-                    <rect x="135" y="45" width="40" height="14" rx="3" fill="#00ff88" />
-                    <rect x="180" y="45" width="35" height="14" rx="3" fill="#ffd700" />
-
-                    <!-- Ball trail and Ball -->
-                    <circle cx="110" cy="110" r="3" fill="rgba(0, 240, 255, 0.4)" />
-                    <circle cx="118" cy="98" r="4.5" fill="rgba(0, 240, 255, 0.6)" />
-                    <circle cx="125" cy="85" r="7" fill="#ffffff" stroke="#00f0ff" stroke-width="2" />
-
-                    <!-- Paddle -->
-                    <rect x="85" y="132" width="75" height="12" rx="6" fill="url(#paddleGlow)" />
+                    <polygon points="20,135 70,85 170,85 220,135" fill="rgba(212, 175, 55, 0.12)" stroke="#d4af37" stroke-width="1.5" />
+                    <circle cx="120" cy="55" r="45" fill="url(#chessGlow)" />
+                    <path d="M92 78 L148 78 L142 88 L98 88 Z" fill="#d4af37" stroke="#ffd700" stroke-width="1" />
+                    <path d="M92 78 L90 52 L105 65 L120 40 L135 65 L150 52 L148 78 Z" fill="#ffd700" stroke="#ffffff" stroke-width="1" />
+                    <circle cx="90" cy="50" r="3" fill="#ffffff" />
+                    <circle cx="120" cy="38" r="4.5" fill="#ffffff" />
+                    <circle cx="150" cy="50" r="3" fill="#ffffff" />
+                    <rect x="118.5" y="24" width="3" height="12" fill="#ffd700" />
+                    <rect x="114" y="27" width="12" height="3" fill="#ffd700" />
                 </svg>
             </div>
             <div class="featured-info">
-                <div class="spotlight-tag"><i class="fas fa-star"></i> FEATURED ARCADE CLASSIC</div>
-                <h3>Neon Breakout</h3>
+                <div class="spotlight-tag" style="color:var(--arcade-yellow);"><i class="fas fa-crown"></i> #1 FEATURED GRANDMASTER STRATEGY</div>
+                <h3 style="background: linear-gradient(135deg, #ffffff 0%, #ffd700 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Royal Kingdom Chess 3D</h3>
                 <p>
-                    Vaporize multi-tier neon glass bricks, dodge hazards, and catch falling weapon enhancements including Twin Lasers and Multi-Balls.
+                    Experience cinematic 3D medieval chess with genuine Stockfish AI across 6 progressive tiers (2 wins to advance), 13 interactive beginner lessons, and customizable clocks.
                 </p>
-                <a href="games/breaker/index.html" class="arcade-btn arcade-btn-primary">
-                    <i class="fas fa-play"></i> Launch Sector 1
-                </a>
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                    <a href="games/chess/index.html" class="arcade-btn arcade-btn-primary" style="background: linear-gradient(135deg, #ffd700 0%, #d4af37 100%); color:#000; font-weight:800;">
+                        <i class="fas fa-chess-knight"></i> Play Royal Chess
+                    </a>
+                    <a href="games/chess/index.html" class="arcade-btn arcade-btn-ghost">
+                        <i class="fas fa-graduation-cap"></i> Interactive Lessons
+                    </a>
+                </div>
             </div>
         </div>
     </section>
@@ -526,7 +521,8 @@
         </div>
 
         <div class="filter-group">
-            <button class="filter-chip active" data-cat="all" onclick="filterCategory('all')">All Games (4)</button>
+            <button class="filter-chip active" data-cat="all" onclick="filterCategory('all')">All Games (5)</button>
+            <button class="filter-chip" data-cat="strategy" onclick="filterCategory('strategy')">Royal Strategy</button>
             <button class="filter-chip" data-cat="action" onclick="filterCategory('action')">Retro &amp; Action</button>
             <button class="filter-chip" data-cat="physics" onclick="filterCategory('physics')">Physics &amp; Reflex</button>
             <button class="filter-chip" data-cat="puzzle" onclick="filterCategory('puzzle')">Mystery &amp; Puzzle</button>
@@ -537,7 +533,45 @@
     <main class="games-collection">
         <div class="games-grid" id="gamesGrid">
 
-            <!-- 1. Cyber Snake Pro -->
+            <!-- 1. Royal Kingdom Chess 3D (FIRST FEATURED GAME) -->
+            <a href="games/chess/index.html" class="game-card-hub" data-id="chess" data-cat="strategy" data-title="Royal Kingdom Chess 3D" onmouseenter="ArcadeAudio.playClick()" style="border-color: rgba(212, 175, 55, 0.45); box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(212, 175, 55, 0.2);">
+                <div class="card-art-box" style="background: radial-gradient(circle at 50% 50%, rgba(76, 29, 149, 0.25) 0%, #090c15 100%);">
+                    <div class="card-top-badges">
+                        <span class="diff-pill" style="background:rgba(212, 175, 55, 0.2); color:#ffd700; border:1px solid #ffd700;">6 AI Tiers (2-Win Rule)</span>
+                        <button class="fav-toggle-btn" onclick="event.preventDefault(); toggleFav('chess', this)" title="Bookmark"><i class="fas fa-heart"></i></button>
+                    </div>
+                    <!-- Custom SVG Art: Golden King & Knight -->
+                    <svg viewBox="0 0 200 120" width="100%" height="100%">
+                        <defs>
+                            <radialGradient id="cardGlow" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#ffd700" stop-opacity="0.35" />
+                                <stop offset="100%" stop-color="#ffd700" stop-opacity="0" />
+                            </radialGradient>
+                        </defs>
+                        <circle cx="100" cy="55" r="40" fill="url(#cardGlow)" />
+                        <polygon points="30,105 70,75 130,75 170,105" fill="rgba(212, 175, 55, 0.1)" stroke="rgba(212, 175, 55, 0.3)" stroke-width="1" />
+                        <path d="M85 85 L115 85 L112 55 L88 55 Z" fill="#d4af37" />
+                        <path d="M82 55 L118 55 L114 42 L86 42 Z" fill="#ffd700" />
+                        <circle cx="100" cy="36" r="6" fill="#ffd700" />
+                        <rect x="98.5" y="22" width="3" height="10" fill="#ffd700" />
+                        <rect x="95" y="25" width="10" height="3" fill="#ffd700" />
+                        <path d="M125 85 L150 85 L145 60 C145 45, 125 45, 120 55 C125 58, 125 65, 130 65 L132 85 Z" fill="#e2e8f0" opacity="0.85" />
+                    </svg>
+                </div>
+                <h2 class="card-title" style="color:#ffffff;">Royal Kingdom Chess 3D</h2>
+                <p class="card-desc">
+                    Cinematic medieval 3D chess powered by Stockfish AI. Features 6 progressive tiers requiring 2 wins each, interactive lessons, and custom clocks.
+                </p>
+                <div class="card-stats-row">
+                    <span><i class="fas fa-crown" style="color:var(--arcade-yellow);"></i> Tier &amp; Progress</span>
+                    <span class="score-tag" id="hs_chess">Easy (0/2)</span>
+                </div>
+                <div class="card-play-btn" style="background: linear-gradient(135deg, #ffd700 0%, #d4af37 100%); color:#000; font-weight:800;">
+                    <i class="fas fa-chess-knight"></i> Play Royal Kingdom
+                </div>
+            </a>
+
+            <!-- 2. Cyber Snake Pro -->
             <a href="games/snake/index.html" class="game-card-hub" data-id="snake" data-cat="action" data-title="Cyber Snake Pro" onmouseenter="ArcadeAudio.playClick()">
                 <div class="card-art-box">
                     <div class="card-top-badges">
@@ -684,7 +718,7 @@
             <div class="empty-icon"><i class="fas fa-ghost"></i></div>
             <h3 style="font-size:1.4rem; margin-bottom:0.5rem;">No Games Found</h3>
             <p style="color:var(--arcade-text-dim); margin-bottom:1.5rem;">
-                No arcade game matched your query. Try searching for "Snake", "Bottle", "Treasure", or "Breakout".
+                No arcade game matched your query. Try searching for "Chess", "Snake", "Bottle", "Treasure", or "Breakout".
             </p>
             <button class="arcade-btn arcade-btn-primary" onclick="resetFilters()">
                 <i class="fas fa-undo"></i> Reset Filters
@@ -707,6 +741,30 @@
         let currentCat = 'all';
 
         function loadStats() {
+            // Royal Kingdom Chess progress
+            try {
+                const chessHistory = JSON.parse(localStorage.getItem('arcade_chess_match_history') || '[]');
+                const winsEasy = chessHistory.filter(r => r.difficulty === 'easy' && r.result === 'win').length;
+                const winsMed = chessHistory.filter(r => r.difficulty === 'medium' && r.result === 'win').length;
+                const winsNorm = chessHistory.filter(r => r.difficulty === 'normal' && r.result === 'win').length;
+                const winsHard = chessHistory.filter(r => r.difficulty === 'hard' && r.result === 'win').length;
+                const winsVH = chessHistory.filter(r => r.difficulty === 'very_hard' && r.result === 'win').length;
+                const winsExp = chessHistory.filter(r => r.difficulty === 'expert' && r.result === 'win').length;
+
+                let tierLabel = 'Easy';
+                let tierWins = winsEasy;
+                if (winsEasy >= 2) { tierLabel = 'Medium'; tierWins = winsMed; }
+                if (winsEasy >= 2 && winsMed >= 2) { tierLabel = 'Normal'; tierWins = winsNorm; }
+                if (winsEasy >= 2 && winsMed >= 2 && winsNorm >= 2) { tierLabel = 'Hard'; tierWins = winsHard; }
+                if (winsEasy >= 2 && winsMed >= 2 && winsNorm >= 2 && winsHard >= 2) { tierLabel = 'Very Hard'; tierWins = winsVH; }
+                if (winsEasy >= 2 && winsMed >= 2 && winsNorm >= 2 && winsHard >= 2 && winsVH >= 2) { tierLabel = 'Expert'; tierWins = winsExp; }
+
+                const chessBadge = document.getElementById('hs_chess');
+                if (chessBadge) {
+                    chessBadge.innerText = `${tierLabel} (${Math.min(2, tierWins)}/2)`;
+                }
+            } catch (e) {}
+
             // Snake best score
             const snakeBest = Math.max(
                 ArcadeStorage.getHighScore('snake_arcade', 0),
