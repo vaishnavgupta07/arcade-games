@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Interactive Buttons & Realm Selection</title>
+</head>
+<body>
+    <iframe id="gameFrame" src="index.html" style="width:1200px; height:800px;"></iframe>
+    <div id="testOutput">Testing buttons...</div>
+
+    <script>
+        const frame = document.getElementById('gameFrame');
+        const output = document.getElementById('testOutput');
+
+        frame.onload = async () => {
+            const doc = frame.contentDocument || frame.contentWindow.document;
+            const win = frame.contentWindow;
+
+            function assert(condition, desc) {
+                if (!condition) {
+                    console.error("[FAIL] " + desc);
+                    throw new Error("Assertion failed: " + desc);
+                } else {
+                    console.log("[PASS] " + desc);
+                }
+            }
+
+            try {
+                // Wait for game initialization
+                await new Promise(r => setTimeout(r, 600));
+
+                assert(win.chessGame !== undefined, "window.chessGame is initialized");
+
+                // 1. Test Game Mode Modal opening
+                win.chessGame.openGameModeModal();
+                assert(doc.getElementById('modeModal').classList.contains('active'), "Game Mode modal opens successfully");
+                win.chessGame.closeAllModals();
+                assert(!doc.getElementById('modeModal').classList.contains('active'), "closeAllModals closes Game Mode modal");
+
+                // 2. Test Settings Modal opening
+                win.chessGame.openSettingsModal();
+                assert(doc.getElementById('settingsModal').classList.contains('active'), "Settings modal opens successfully");
+                win.chessGame.closeAllModals();
+
+                // 3. Test Learn Lessons opening
+                win.chessGame.startLessons(0);
+                assert(doc.getElementById('lessonModal').classList.contains('active'), "Learn lessons modal opens successfully");
+                win.chessGame.closeAllModals();
+
+                // 4. Test Pre-Match Setup Modal & Realm Selection
+                win.chessGame.openSetupModal();
+                assert(doc.getElementById('setupModal').classList.contains('active'), "Setup modal opens successfully");
+                const realmCards = doc.querySelectorAll('.rk-setup-realm-card');
+                assert(realmCards.length === 6, "All 6 realm cards rendered in Pre-Match setup");
+
+                // Click Forest Realm card
+                const forestCard = Array.from(realmCards).find(c => c.dataset.realmId === 'forest');
+                assert(forestCard !== undefined, "Enchanted Forest realm card exists in setup");
+                forestCard.click();
+                assert(win.chessGame.currentEnvironment === 'forest', "Selecting Enchanted Forest updates currentEnvironment");
+                assert(forestCard.classList.contains('selected'), "Enchanted Forest card is marked selected");
+
+                // Click Frozen Kingdom Realm card
+                const frozenCard = Array.from(realmCards).find(c => c.dataset.realmId === 'frozen');
+                frozenCard.click();
+                assert(win.chessGame.currentEnvironment === 'frozen', "Selecting Frozen Kingdom updates currentEnvironment");
+
+                win.chessGame.closeAllModals();
+
+                // 5. Test Instant Hint functionality
+                await win.chessGame.suggestHint();
+                assert(win.chessGame.activeHint !== null, "suggestHint generates active hint");
+                assert(win.chessGame.activeHint.from && win.chessGame.activeHint.to, "activeHint has valid from/to squares");
+                const hintBanner = doc.getElementById('hintBanner');
+                assert(hintBanner && hintBanner.style.display !== 'none', "Hint banner is displayed on screen");
+
+                output.innerHTML = "<h2 style='color:green;'>ALL BUTTON & REALM SELECTION TESTS PASSED!</h2>";
+                console.log("[PASS] ALL BUTTON & REALM SELECTION TESTS PASSED!");
+            } catch (err) {
+                output.innerHTML = "<h2 style='color:red;'>FAILED: " + err.message + "</h2>";
+                console.error("[FAIL] " + err.message);
+            }
+        };
+    </script>
+</body>
+</html>

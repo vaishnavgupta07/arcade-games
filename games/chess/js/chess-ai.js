@@ -221,6 +221,64 @@ class ChessAI {
         return chosenMove;
     }
 
+    /**
+     * Instant Tactical Hint Generator (Zero Artificial Delay, Zero UI Lag)
+     */
+    async getFastHint(engine) {
+        const legalMoves = engine.getAllLegalMoves();
+        if (!legalMoves || legalMoves.length === 0) return null;
+
+        let bestMove = null;
+
+        if (this.worker && this.isWorkerReady && !this.workerFailed) {
+            try {
+                const hintProfile = {
+                    stockfishSkill: 20,
+                    stockfishDepth: 7,
+                    maxMoveTime: 300
+                };
+                bestMove = await this.queryStockfish(engine.getFen(), hintProfile, this.currentSearchId);
+            } catch (e) {
+                bestMove = null;
+            }
+        }
+
+        if (!bestMove) {
+            // Instant depth-2 minimax evaluation (under 15ms)
+            bestMove = this.minimaxBestMove(engine, 2);
+        }
+
+        if (!bestMove) {
+            bestMove = legalMoves[0];
+        }
+
+        // Determine tactical rationale
+        const pieceNames = { p: 'Pawn', n: 'Knight', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' };
+        const boardPiece = engine.getPieceAt ? engine.getPieceAt(bestMove.from) : null;
+        const targetPiece = engine.getPieceAt ? engine.getPieceAt(bestMove.to) : null;
+        const pieceTitle = boardPiece ? pieceNames[boardPiece.type] : 'Piece';
+
+        let explanation = `Develops ${pieceTitle} into active position`;
+
+        if (bestMove.flags && (bestMove.flags.includes('k') || bestMove.flags.includes('q'))) {
+            explanation = 'Secures King safety via Castling';
+        } else if (targetPiece || (bestMove.flags && bestMove.flags.includes('e'))) {
+            const capturedType = targetPiece ? pieceNames[targetPiece.type] : 'Pawn';
+            explanation = `Tactical strike: Captures ${capturedType} on ${bestMove.to.toUpperCase()}`;
+        } else if (bestMove.flags && bestMove.flags.includes('p')) {
+            explanation = `Pushes pawn to promote to Queen`;
+        } else if (['e4', 'd4', 'e5', 'd5', 'c4', 'f4', 'c5', 'f5'].includes(bestMove.to)) {
+            explanation = `Takes strong control of center square ${bestMove.to.toUpperCase()}`;
+        }
+
+        return {
+            from: bestMove.from,
+            to: bestMove.to,
+            piece: boardPiece ? boardPiece.type : 'p',
+            explanation
+        };
+    }
+
     queryStockfish(fen, profile, searchId) {
         return new Promise((resolve) => {
             const timeout = setTimeout(() => {

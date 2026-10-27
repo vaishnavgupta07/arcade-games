@@ -21,6 +21,7 @@ class ChessGameController {
         this.isCompetitive = true;
         this.pendingPromotion = null;
         this.currentEnvironment = localStorage.getItem('rk_active_environment') || 'royal';
+        this.activeHint = null;
 
         // Review Mode State
         this.isReviewing = false;
@@ -330,16 +331,42 @@ class ChessGameController {
     }
 
     bindEvents() {
-        document.getElementById('viewToggleBtn').addEventListener('click', () => this.toggle2D3D());
+        document.getElementById('viewToggleBtn')?.addEventListener('click', () => this.toggle2D3D());
 
-        document.getElementById('topDownBtn').addEventListener('click', () => {
+        document.getElementById('topDownBtn')?.addEventListener('click', () => {
             if (this.is3D && this.view3D) {
                 const isTD = this.view3D.toggleTopDown();
                 document.getElementById('topDownBtn').classList.toggle('active', isTD);
             }
         });
 
-        document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
+        document.getElementById('fullscreenBtn')?.addEventListener('click', () => this.toggleFullscreen());
+
+        // Modal Close on Escape Key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeAllModals();
+            }
+        });
+
+        // Quick Side Panel Toolbar Buttons (Reliable Direct Access)
+        document.getElementById('btnSideNewMatch')?.addEventListener('click', () => this.openSetupModal());
+        document.getElementById('btnSideRealm')?.addEventListener('click', () => this.openEnvironmentModal());
+        document.getElementById('btnSideModes')?.addEventListener('click', () => this.openGameModeModal());
+        document.getElementById('btnSideLearn')?.addEventListener('click', () => this.startLessons(0));
+        document.getElementById('btnSideSettings')?.addEventListener('click', () => this.openSettingsModal());
+
+        // Side Panel Game Action Grid
+        document.getElementById('btnSideHint')?.addEventListener('click', () => this.suggestHint());
+        document.getElementById('btnSideUndo')?.addEventListener('click', () => this.undoMove());
+        document.getElementById('btnSideDraw')?.addEventListener('click', () => this.offerDraw());
+        document.getElementById('btnSideResign')?.addEventListener('click', () => this.resign());
+
+        // Top Arcade Header Navigation Buttons
+        document.getElementById('btnHeaderRealm')?.addEventListener('click', () => this.openEnvironmentModal());
+        document.getElementById('btnHeaderModes')?.addEventListener('click', () => this.openGameModeModal());
+        document.getElementById('btnHeaderSettings')?.addEventListener('click', () => this.openSettingsModal());
+        document.getElementById('btnHeaderLearn')?.addEventListener('click', () => this.startLessons(0));
 
         document.querySelectorAll('.rk-promo-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -348,7 +375,7 @@ class ChessGameController {
             });
         });
 
-        document.getElementById('ladderContainer').addEventListener('click', (e) => {
+        document.getElementById('ladderContainer')?.addEventListener('click', (e) => {
             const item = e.target.closest('.rk-ladder-item');
             if (item && !item.classList.contains('locked')) {
                 document.querySelectorAll('.rk-ladder-item').forEach(el => el.classList.remove('selected'));
@@ -357,10 +384,10 @@ class ChessGameController {
             }
         });
 
-        document.getElementById('reviewStart').addEventListener('click', () => this.goToReviewStep(0));
-        document.getElementById('reviewPrev').addEventListener('click', () => this.goToReviewStep(this.reviewIndex - 1));
-        document.getElementById('reviewNext').addEventListener('click', () => this.goToReviewStep(this.reviewIndex + 1));
-        document.getElementById('reviewEnd').addEventListener('click', () => this.goToReviewStep(this.engine.moveHistory.length - 1));
+        document.getElementById('reviewStart')?.addEventListener('click', () => this.goToReviewStep(0));
+        document.getElementById('reviewPrev')?.addEventListener('click', () => this.goToReviewStep(this.reviewIndex - 1));
+        document.getElementById('reviewNext')?.addEventListener('click', () => this.goToReviewStep(this.reviewIndex + 1));
+        document.getElementById('reviewEnd')?.addEventListener('click', () => this.goToReviewStep(this.engine.moveHistory.length - 1));
     }
 
     toggleFullscreen() {
@@ -397,8 +424,63 @@ class ChessGameController {
     }
 
     openSetupModal() {
+        this.renderSetupRealms();
         this.renderDifficultyLadder();
         this.openModal('setupModal');
+    }
+
+    renderSetupRealms() {
+        const grid = document.getElementById('setupRealmsGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const realms = Object.values(Chess3D.REALMS);
+        realms.forEach(realm => {
+            const isSelected = (realm.id === this.currentEnvironment);
+            const card = document.createElement('div');
+            card.className = `rk-setup-realm-card ${isSelected ? 'selected' : ''}`;
+            card.dataset.realmId = realm.id;
+
+            let iconClass = 'fa-crown';
+            switch (realm.id) {
+                case 'forest': iconClass = 'fa-tree'; break;
+                case 'frozen': iconClass = 'fa-snowflake'; break;
+                case 'dragon': iconClass = 'fa-dragon'; break;
+                case 'celestial': iconClass = 'fa-star-and-crescent'; break;
+                case 'temple': iconClass = 'fa-archway'; break;
+            }
+
+            card.innerHTML = `
+                <div class="realm-icon"><i class="fas ${iconClass}"></i></div>
+                <div class="realm-name">${realm.name}</div>
+                ${isSelected ? '<div class="realm-status"><i class="fas fa-check"></i> Active</div>' : ''}
+            `;
+
+            card.addEventListener('click', () => {
+                this.selectEnvironment(realm.id);
+                document.querySelectorAll('.rk-setup-realm-card').forEach(el => {
+                    const sel = (el.dataset.realmId === realm.id);
+                    el.classList.toggle('selected', sel);
+                    const statusEl = el.querySelector('.realm-status');
+                    if (statusEl) statusEl.remove();
+                    if (sel) {
+                        const st = document.createElement('div');
+                        st.className = 'realm-status';
+                        st.innerHTML = '<i class="fas fa-check"></i> Active';
+                        el.appendChild(st);
+                    }
+                });
+                const nameDisplay = document.getElementById('setupRealmActiveName');
+                if (nameDisplay) nameDisplay.innerText = realm.name;
+            });
+
+            grid.appendChild(card);
+        });
+
+        const nameDisplay = document.getElementById('setupRealmActiveName');
+        if (nameDisplay && Chess3D.REALMS[this.currentEnvironment]) {
+            nameDisplay.innerText = Chess3D.REALMS[this.currentEnvironment].name;
+        }
     }
 
     renderDifficultyLadder() {
@@ -519,6 +601,10 @@ class ChessGameController {
     // =========================================================================
     handleSquareClick(square) {
         if (this.isReviewing) return;
+        this.activeHint = null;
+        const banner = document.getElementById('hintBanner');
+        if (banner) banner.style.display = 'none';
+
         const currentTurn = this.engine.turn();
 
         if (this.currentMode === 'ai' && currentTurn !== this.playerColor) {
@@ -750,12 +836,43 @@ class ChessGameController {
     }
 
     async suggestHint() {
-        const bestMove = await this.ai.getBestMove(this.engine, 'expert');
-        if (bestMove) {
-            this.selectedSquare = bestMove.from;
-            this.legalMoves = [{ to: bestMove.to, flags: '', captured: null }];
-            this.renderBoard();
-            this.statusText.innerText = `Hint: Consider moving ${bestMove.from.toUpperCase()} to ${bestMove.to.toUpperCase()}`;
+        if (this.engine.isGameOver().isOver) {
+            this.showHintBanner("The match has already concluded! Click 'New Match' to begin again.", false);
+            return;
+        }
+
+        const currentTurn = this.engine.turn();
+        if (this.currentMode === 'ai' && currentTurn !== this.playerColor) {
+            this.showHintBanner("Royal AI is currently calculating its move...", false);
+            return;
+        }
+
+        const hint = await this.ai.getFastHint(this.engine);
+        if (!hint) {
+            this.showHintBanner("No legal moves available in this position.", false);
+            return;
+        }
+
+        this.activeHint = { from: hint.from, to: hint.to };
+        this.selectedSquare = hint.from;
+        this.legalMoves = [{ to: hint.to, flags: '', captured: this.engine.getPieceAt(hint.to) }];
+        this.renderBoard();
+
+        const pieceNames = { p: 'Pawn', n: 'Knight', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' };
+        const pObj = this.engine.getPieceAt(hint.from);
+        const pName = pObj ? pieceNames[pObj.type] : 'Piece';
+
+        ChessAudio.playHint();
+        this.showHintBanner(`Move ${pName} from ${hint.from.toUpperCase()} to ${hint.to.toUpperCase()} (${hint.explanation})`, true);
+        this.statusText.innerText = `💡 Hint: ${pName} ${hint.from.toUpperCase()} → ${hint.to.toUpperCase()}`;
+    }
+
+    showHintBanner(msg, isSuccess = true) {
+        const banner = document.getElementById('hintBanner');
+        const text = document.getElementById('hintBannerText');
+        if (banner && text) {
+            text.innerText = msg;
+            banner.style.display = 'flex';
         }
     }
 
@@ -781,7 +898,8 @@ class ChessGameController {
             selected: this.selectedSquare,
             legalMoves: this.legalMoves,
             lastMove: this.lastMove,
-            checkSquare
+            checkSquare,
+            hint: this.activeHint
         };
 
         if (this.is3D && this.view3D) {
@@ -918,15 +1036,50 @@ class ChessGameController {
     }
 
     openModal(id) {
+        this.closeAllModals();
         const modal = document.getElementById(id);
-        if (modal) modal.classList.add('active');
+        if (modal) {
+            modal.classList.add('active');
+            ChessAudio.playClick();
+        }
     }
 
     closeModal(id) {
         const modal = document.getElementById(id);
         if (modal) modal.classList.remove('active');
     }
+
+    closeAllModals() {
+        document.querySelectorAll('.rk-modal-backdrop').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+
+    handleBackdropClick(e) {
+        if (e && e.target && e.target.classList.contains('rk-modal-backdrop')) {
+            e.target.classList.remove('active');
+        }
+    }
 }
+
+// Global safety proxies for resilient button handling
+window.openChessModal = function(id) {
+    if (window.chessGame) {
+        window.chessGame.openModal(id);
+    } else {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('active');
+    }
+};
+
+window.closeChessModal = function(id) {
+    if (window.chessGame) {
+        window.chessGame.closeModal(id);
+    } else {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     window.chessGame = new ChessGameController();

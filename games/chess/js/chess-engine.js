@@ -229,6 +229,10 @@ class ChessEngine {
         return this.chess.get(square);
     }
 
+    getPiece(square) {
+        return this.getPieceAt(square);
+    }
+
     getBoardMatrix() {
         return this.chess.board();
     }

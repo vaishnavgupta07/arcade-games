@@ -28,22 +28,22 @@
         </div>
 
         <div class="arcade-actions">
-            <button class="arcade-btn arcade-btn-icon arcade-sound-btn" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
+            <button class="arcade-btn arcade-btn-icon arcade-sound-btn" id="btnHeaderMute" onclick="ArcadeAudio.toggleMute()" title="Mute/Unmute Audio">
                 <i class="fas fa-volume-up"></i>
             </button>
-            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openEnvironmentModal()" title="Change 3D Realm Environment">
+            <button class="arcade-btn arcade-btn-ghost" id="btnHeaderRealm" onclick="window.chessGame?.openEnvironmentModal()" title="Change 3D Realm Environment">
                 <i class="fas fa-mountain"></i> <span class="hide-mobile">Realm: <span id="currentRealmBadge">Royal Kingdom</span></span>
             </button>
-            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openGameModeModal()" title="Select Game Mode">
+            <button class="arcade-btn arcade-btn-ghost" id="btnHeaderModes" onclick="window.chessGame?.openGameModeModal()" title="Select Game Mode">
                 <i class="fas fa-gamepad"></i> <span class="hide-mobile">Game Modes</span>
             </button>
-            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.openSettingsModal()" title="Settings & Preferences">
+            <button class="arcade-btn arcade-btn-ghost" id="btnHeaderSettings" onclick="window.chessGame?.openSettingsModal()" title="Settings & Preferences">
                 <i class="fas fa-sliders-h"></i> <span class="hide-mobile">Settings</span>
             </button>
-            <button class="arcade-btn arcade-btn-ghost" onclick="window.chessGame.startLessons(0)" title="Interactive Lessons">
+            <button class="arcade-btn arcade-btn-ghost" id="btnHeaderLearn" onclick="window.chessGame?.startLessons(0)" title="Interactive Lessons">
                 <i class="fas fa-graduation-cap"></i> <span class="hide-mobile">Learn</span>
             </button>
-            <a href="../../index.html" class="arcade-btn arcade-btn-danger" title="Exit to Hub">
+            <a href="../../index.html" class="arcade-btn arcade-btn-danger" id="btnHeaderExit" title="Exit to Hub">
                 <i class="fas fa-door-open"></i> <span class="hide-mobile">Exit</span>
             </a>
         </div>
@@ -102,6 +102,32 @@
                 <div class="rk-material-advantage" id="advantageDisplay" style="display:none;">+0</div>
             </div>
 
+            <!-- Quick Panel Toolbar (Direct Access to All Modes, Settings & Learn) -->
+            <div class="rk-panel-toolbar">
+                <button class="rk-toolbar-btn highlight" id="btnSideNewMatch" onclick="window.chessGame?.openSetupModal()" title="Start New Match / Choose Realm & Mode">
+                    <i class="fas fa-play"></i><span>New Match</span>
+                </button>
+                <button class="rk-toolbar-btn" id="btnSideRealm" onclick="window.chessGame?.openEnvironmentModal()" title="Choose 3D Realm (Royal, Forest, Frozen, etc.)">
+                    <i class="fas fa-mountain"></i><span>Realms</span>
+                </button>
+                <button class="rk-toolbar-btn" id="btnSideModes" onclick="window.chessGame?.openGameModeModal()" title="Select Game Mode (AI, 2-Player, Timed, etc.)">
+                    <i class="fas fa-gamepad"></i><span>Modes</span>
+                </button>
+                <button class="rk-toolbar-btn" id="btnSideLearn" onclick="window.chessGame?.startLessons(0)" title="13 Interactive Chess Lessons">
+                    <i class="fas fa-graduation-cap"></i><span>Learn</span>
+                </button>
+                <button class="rk-toolbar-btn" id="btnSideSettings" onclick="window.chessGame?.openSettingsModal()" title="Graphics Quality & Sound Settings">
+                    <i class="fas fa-sliders-h"></i><span>Settings</span>
+                </button>
+            </div>
+
+            <!-- Tactical Hint Message Banner (Animated) -->
+            <div class="rk-hint-banner" id="hintBanner" style="display:none;">
+                <i class="fas fa-lightbulb"></i>
+                <div id="hintBannerText" style="flex:1;">Hint: Consider moving Knight to F3</div>
+                <button class="rk-hint-close-btn" onclick="document.getElementById('hintBanner').style.display='none'">&times;</button>
+            </div>
+
             <!-- Move History List -->
             <div class="rk-moves-card">
                 <div class="rk-card-header">
@@ -138,16 +164,16 @@
 
             <!-- Game Actions Grid -->
             <div class="rk-actions-grid">
-                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.suggestHint()" title="Request Move Hint">
+                <button class="rk-btn rk-btn-hint" id="btnSideHint" onclick="window.chessGame?.suggestHint()" title="Request Instant Move Hint">
                     <i class="fas fa-lightbulb"></i> Hint
                 </button>
-                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.undoMove()" title="Takeback Move">
+                <button class="rk-btn rk-btn-ghost" id="btnSideUndo" onclick="window.chessGame?.undoMove()" title="Takeback Move">
                     <i class="fas fa-undo"></i> Undo
                 </button>
-                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.offerDraw()" title="Offer Draw">
+                <button class="rk-btn rk-btn-ghost" id="btnSideDraw" onclick="window.chessGame?.offerDraw()" title="Offer Draw">
                     <i class="fas fa-handshake"></i> Draw
                 </button>
-                <button class="rk-btn rk-btn-danger" onclick="window.chessGame.resign()" title="Resign Match">
+                <button class="rk-btn rk-btn-danger" id="btnSideResign" onclick="window.chessGame?.resign()" title="Resign Match">
                     <i class="fas fa-flag"></i> Resign
                 </button>
             </div>
@@ -161,8 +187,9 @@
          ====================================================================== -->
 
     <!-- 1. Onboarding Experience Question Modal -->
-    <div class="rk-modal-backdrop" id="onboardingModal">
+    <div class="rk-modal-backdrop" id="onboardingModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('onboardingModal')" title="Close">&times;</button>
             <div class="rk-crest-icon"><i class="fas fa-crown"></i></div>
             <h2 class="rk-modal-title">Welcome to Royal Kingdom</h2>
             <p class="rk-modal-desc">
@@ -170,12 +197,12 @@
             </p>
 
             <div class="rk-choice-grid">
-                <div class="rk-choice-card" onclick="window.chessGame.selectExperience('beginner')">
+                <div class="rk-choice-card" onclick="window.chessGame?.selectExperience('beginner')">
                     <div class="icon"><i class="fas fa-seedling"></i></div>
                     <h4>Beginner</h4>
                     <p>I am learning the rules. Guide me with interactive lessons, move hints, and introductory matches.</p>
                 </div>
-                <div class="rk-choice-card" onclick="window.chessGame.selectExperience('experienced')">
+                <div class="rk-choice-card" onclick="window.chessGame?.selectExperience('experienced')">
                     <div class="icon"><i class="fas fa-chess"></i></div>
                     <h4>Experienced Player</h4>
                     <p>I know all standard chess rules. Let me challenge the progressive 6-tier AI ladder starting at Easy.</p>
@@ -184,16 +211,28 @@
         </div>
     </div>
 
-    <!-- 2. Pre-Match Setup Modal -->
-    <div class="rk-modal-backdrop" id="setupModal">
+    <!-- 2. Pre-Match Setup Modal & Realm Selection -->
+    <div class="rk-modal-backdrop" id="setupModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('setupModal')" title="Close">&times;</button>
             <div class="rk-crest-icon"><i class="fas fa-chess-board"></i></div>
-            <h2 class="rk-modal-title">Match Configuration</h2>
-            <p class="rk-modal-desc">Configure your battle terms before sitting at the imperial board.</p>
+            <h2 class="rk-modal-title">Prepare For Battle</h2>
+            <p class="rk-modal-desc">Select your living realm environment and battle terms before sitting at the imperial board.</p>
 
-            <!-- Mode Selector -->
+            <!-- Section 1: Choose Battlefield Realm -->
             <div style="margin-bottom:1.25rem; text-align:left;">
-                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">GAME MODE</label>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright);">
+                        1. CHOOSE BATTLEFIELD REALM
+                    </label>
+                    <span id="setupRealmActiveName" style="font-size:0.8rem; color:var(--rk-gold-bright); font-weight:700;">Royal Kingdom</span>
+                </div>
+                <div class="rk-setup-realms-grid" id="setupRealmsGrid"></div>
+            </div>
+
+            <!-- Section 2: Mode Selector -->
+            <div style="margin-bottom:1.25rem; text-align:left;">
+                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">2. GAME MODE</label>
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">
                     <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
                         <input type="radio" name="gameMode" value="ai" checked style="margin-right:0.3rem;"> Versus AI
@@ -207,9 +246,9 @@
                 </div>
             </div>
 
-            <!-- Color Selector -->
+            <!-- Section 3: Color Selector -->
             <div style="margin-bottom:1.25rem; text-align:left;">
-                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">YOUR PIECE COLOR</label>
+                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">3. YOUR PIECE COLOR</label>
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">
                     <label class="rk-btn rk-btn-ghost" style="cursor:pointer; font-size:0.8rem;">
                         <input type="radio" name="playerColor" value="w" checked style="margin-right:0.3rem;"> White
@@ -223,9 +262,9 @@
                 </div>
             </div>
 
-            <!-- Time Control Selector -->
+            <!-- Section 4: Time Control Selector -->
             <div style="margin-bottom:1.25rem; text-align:left;">
-                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">CHESS CLOCK</label>
+                <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">4. CHESS CLOCK</label>
                 <select id="timePresetSelect" class="rk-btn rk-btn-ghost" style="width:100%; text-align:left; padding:0.6rem;">
                     <option value="0">Casual (No Clock)</option>
                     <option value="1">1 Minute (Bullet)</option>
@@ -236,19 +275,19 @@
                 </select>
             </div>
 
-            <!-- 6-Tier Progression Ladder -->
+            <!-- Section 5: 6-Tier Progression Ladder -->
             <div style="text-align:left; margin-bottom:1.5rem;">
                 <label style="font-weight:700; font-size:0.85rem; color:var(--rk-gold-bright); display:block; margin-bottom:0.5rem;">
-                    DIFFICULTY LADDER (2 WINS REQUIRED PER TIER)
+                    5. DIFFICULTY LADDER (2 WINS REQUIRED PER TIER)
                 </label>
                 <div class="rk-ladder-list" id="ladderContainer"></div>
             </div>
 
             <div style="display:flex; gap:0.75rem;">
-                <button class="rk-btn rk-btn-primary" style="flex:1;" onclick="window.chessGame.startMatchFromSetup()">
+                <button class="rk-btn rk-btn-primary" style="flex:1;" onclick="window.chessGame?.startMatchFromSetup()">
                     <i class="fas fa-play"></i> START MATCH
                 </button>
-                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.closeModal('setupModal')">
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame?.closeModal('setupModal')">
                     Cancel
                 </button>
             </div>
@@ -271,8 +310,9 @@
     </div>
 
     <!-- 4. Match Result Screen Modal -->
-    <div class="rk-modal-backdrop" id="resultModal">
+    <div class="rk-modal-backdrop" id="resultModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('resultModal')" title="Close">&times;</button>
             <div id="resultModalCrest" class="fas fa-trophy rk-crest-icon"></div>
             <h2 class="rk-modal-title" id="resultModalTitle">VICTORIOUS KINGDOM!</h2>
             <p class="rk-modal-desc" id="resultModalDesc">Your tactical supremacy has checkmated the enemy monarch.</p>
@@ -289,10 +329,10 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:0.65rem;">
-                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.closeModal('resultModal'); window.chessGame.openSetupModal();">
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame?.closeModal('resultModal'); window.chessGame?.openSetupModal();">
                     <i class="fas fa-redo"></i> Rematch
                 </button>
-                <button class="rk-btn rk-btn-royal" onclick="window.chessGame.startReviewMode()">
+                <button class="rk-btn rk-btn-royal" onclick="window.chessGame?.startReviewMode()">
                     <i class="fas fa-search"></i> Review Game Move-By-Move
                 </button>
                 <a href="../../index.html" class="rk-btn rk-btn-ghost">
@@ -303,8 +343,9 @@
     </div>
 
     <!-- 5. Level Unlock Celebration Modal -->
-    <div class="rk-modal-backdrop" id="unlockModal">
+    <div class="rk-modal-backdrop" id="unlockModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card" style="border-color:var(--rk-gold-bright);">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('unlockModal')" title="Close">&times;</button>
             <div class="rk-crest-icon" style="color:var(--rk-gold-bright);"><i class="fas fa-medal"></i></div>
             <h2 class="rk-modal-title" style="color:var(--rk-gold-bright);">TIER UNLOCKED!</h2>
             <p class="rk-modal-desc">
@@ -313,15 +354,16 @@
             <div style="font-size:2rem; font-weight:900; color:#ffffff; margin-bottom:1.5rem; text-shadow:0 0 25px var(--rk-gold-bright);" id="unlockTierName">
                 Medium
             </div>
-            <button class="rk-btn rk-btn-primary" onclick="window.chessGame.closeModal('unlockModal')">
+            <button class="rk-btn rk-btn-primary" onclick="window.chessGame?.closeModal('unlockModal')">
                 <i class="fas fa-check"></i> Continue Conquest
             </button>
         </div>
     </div>
 
     <!-- 6. Interactive Lessons Curriculum Modal -->
-    <div class="rk-modal-backdrop" id="lessonModal">
+    <div class="rk-modal-backdrop" id="lessonModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card rk-lesson-modal-card">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('lessonModal')" title="Close">&times;</button>
             <div class="rk-lesson-header">
                 <div class="rk-lesson-badge" id="lessonBadge">Lesson 1 of 13</div>
                 <h3 class="rk-modal-title" id="lessonTitle" style="text-align:left;">1. The Royal Chessboard</h3>
@@ -335,16 +377,16 @@
             <div class="rk-lesson-feedback" id="lessonFeedback"></div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem;">
-                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.showLessonHint()">
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame?.showLessonHint()">
                     <i class="fas fa-question-circle"></i> Hint
                 </button>
-                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.replayLesson()">
+                <button class="rk-btn rk-btn-ghost" onclick="window.chessGame?.replayLesson()">
                     <i class="fas fa-redo"></i> Reset Board
                 </button>
-                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.nextLesson()">
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame?.nextLesson()">
                     Next Lesson <i class="fas fa-arrow-right"></i>
                 </button>
-                <button class="rk-btn rk-btn-danger" onclick="window.chessGame.closeModal('lessonModal')">
+                <button class="rk-btn rk-btn-danger" onclick="window.chessGame?.closeModal('lessonModal')">
                     Exit Lessons
                 </button>
             </div>
@@ -352,8 +394,9 @@
     </div>
 
     <!-- 7. Environment Selection Modal (6 Living 3D Realms) -->
-    <div class="rk-modal-backdrop" id="envModal">
+    <div class="rk-modal-backdrop" id="envModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card rk-env-modal-card">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('envModal')" title="Close">&times;</button>
             <div class="rk-crest-icon"><i class="fas fa-mountain"></i></div>
             <h2 class="rk-modal-title">Select 3D Realm Environment</h2>
             <p class="rk-modal-desc">
@@ -363,7 +406,7 @@
             <div class="rk-env-grid" id="envCardsGrid"></div>
 
             <div style="display:flex; justify-content:center; gap:0.75rem;">
-                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.closeModal('envModal')">
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame?.closeModal('envModal')">
                     <i class="fas fa-check"></i> Confirm Realm
                 </button>
             </div>
@@ -371,14 +414,15 @@
     </div>
 
     <!-- 8. Game Mode Selection Modal -->
-    <div class="rk-modal-backdrop" id="modeModal">
+    <div class="rk-modal-backdrop" id="modeModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card" style="max-width:680px;">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('modeModal')" title="Close">&times;</button>
             <div class="rk-crest-icon"><i class="fas fa-gamepad"></i></div>
             <h2 class="rk-modal-title">Choose Game Mode</h2>
             <p class="rk-modal-desc">Select how you wish to experience Royal Kingdom Chess:</p>
 
             <div class="rk-modes-grid">
-                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('ai')">
+                <div class="rk-mode-card" onclick="window.chessGame?.selectGameMode('ai')">
                     <div class="icon-box"><i class="fas fa-robot"></i></div>
                     <div>
                         <h4>Play Against AI</h4>
@@ -386,7 +430,7 @@
                     </div>
                 </div>
 
-                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('local')">
+                <div class="rk-mode-card" onclick="window.chessGame?.selectGameMode('local')">
                     <div class="icon-box"><i class="fas fa-users"></i></div>
                     <div>
                         <h4>Two-Player Local Chess</h4>
@@ -394,7 +438,7 @@
                     </div>
                 </div>
 
-                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('timed')">
+                <div class="rk-mode-card" onclick="window.chessGame?.selectGameMode('timed')">
                     <div class="icon-box"><i class="fas fa-stopwatch"></i></div>
                     <div>
                         <h4>Timed Chess</h4>
@@ -402,7 +446,7 @@
                     </div>
                 </div>
 
-                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('practice')">
+                <div class="rk-mode-card" onclick="window.chessGame?.selectGameMode('practice')">
                     <div class="icon-box"><i class="fas fa-magic"></i></div>
                     <div>
                         <h4>Practice Mode</h4>
@@ -410,7 +454,7 @@
                     </div>
                 </div>
 
-                <div class="rk-mode-card" onclick="window.chessGame.selectGameMode('lesson')" style="grid-column: 1 / -1;">
+                <div class="rk-mode-card" onclick="window.chessGame?.selectGameMode('lesson')" style="grid-column: 1 / -1;">
                     <div class="icon-box" style="background:linear-gradient(135deg, rgba(16,185,129,0.3), rgba(76,29,149,0.4)); color:#34d399;"><i class="fas fa-graduation-cap"></i></div>
                     <div>
                         <h4>Learn Chess (13 Interactive Lessons)</h4>
@@ -419,15 +463,16 @@
                 </div>
             </div>
 
-            <button class="rk-btn rk-btn-ghost" onclick="window.chessGame.closeModal('modeModal')">
+            <button class="rk-btn rk-btn-ghost" onclick="window.chessGame?.closeModal('modeModal')">
                 Close
             </button>
         </div>
     </div>
 
     <!-- 9. Comprehensive Settings Modal -->
-    <div class="rk-modal-backdrop" id="settingsModal">
+    <div class="rk-modal-backdrop" id="settingsModal" onclick="window.chessGame?.handleBackdropClick(event)">
         <div class="rk-modal-card rk-settings-card">
+            <button class="rk-modal-close" onclick="window.chessGame?.closeModal('settingsModal')" title="Close">&times;</button>
             <div class="rk-crest-icon"><i class="fas fa-sliders-h"></i></div>
             <h2 class="rk-modal-title">Settings &amp; Preferences</h2>
             <p class="rk-modal-desc">Customize 3D graphics, ambient acoustics, and AI cadence:</p>
@@ -491,7 +536,12 @@
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
-                <button class="rk-btn rk-btn-primary" onclick="window.chessGame.saveSettings()">
+                <button class="rk-btn rk-btn-primary" onclick="window.chessGame?.saveSettings()">
+                    <i class="fas fa-save"></i> Save Preferences
+                </button>
+            </div>
+        </div>
+    </div>
                     <i class="fas fa-save"></i> Save Preferences
                 </button>
             </div>

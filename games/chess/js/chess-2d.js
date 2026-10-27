@@ -93,6 +93,10 @@ class Chess2D {
                 if (this.inCheckSquare === squareName) {
                     squareEl.classList.add('in-check');
                 }
+                if (highlights.hint) {
+                    if (highlights.hint.from === squareName) squareEl.classList.add('hint-from');
+                    if (highlights.hint.to === squareName) squareEl.classList.add('hint-to');
+                }
 
                 // Piece
                 const piece = board[r][c];

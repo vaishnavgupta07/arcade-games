@@ -460,6 +460,50 @@ const ChessAudio = (function () {
                     osc.stop(now + idx * 0.07 + 0.32);
                 });
             } catch (e) {}
+        },
+
+        // Mystical gentle chime for tactical hint
+        playHint: function () {
+            if (isMuted()) return;
+            try {
+                const c = getContext();
+                if (!c) return;
+                const notes = [659.25, 880, 1318.51]; // E5, A5, E6
+                const now = c.currentTime;
+                notes.forEach((freq, idx) => {
+                    const osc = c.createOscillator();
+                    const gain = c.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.22 * sfxVolume, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.45);
+                    osc.connect(gain);
+                    gain.connect(c.destination);
+                    osc.start(now + idx * 0.06);
+                    osc.stop(now + idx * 0.06 + 0.48);
+                });
+            } catch (e) {}
+        },
+
+        // Crisp UI click feedback
+        playClick: function () {
+            if (isMuted()) return;
+            try {
+                const c = getContext();
+                if (!c) return;
+                const osc = c.createOscillator();
+                const gain = c.createGain();
+                const now = c.currentTime;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(540, now);
+                osc.frequency.exponentialRampToValueAtTime(320, now + 0.04);
+                gain.gain.setValueAtTime(0.12 * sfxVolume, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                osc.connect(gain);
+                gain.connect(c.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } catch (e) {}
         }
     };
 })();

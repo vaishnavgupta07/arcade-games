@@ -237,6 +237,27 @@
             speedAI.setResponseSpeed('natural');
             assert(speedAI.getResponseSpeed() === 'natural', "Natural speed restored (2.2s - 3.4s standard cadence)");
 
+            // TEST 17: Fast Tactical Hint Generator (Instant, Non-blocking)
+            const hintAI = new ChessAI();
+            const hintEngine = new ChessEngine();
+            const hintRes = await hintAI.getFastHint(hintEngine);
+            assert(hintRes !== null && hintRes.from && hintRes.to, "Fast hint successfully generates legal recommendation");
+            assert(typeof hintRes.explanation === 'string' && hintRes.explanation.length > 0, "Hint includes tactical explanation");
+            const isHintLegal = hintEngine.getAllLegalMoves().some(m => m.from === hintRes.from && m.to === hintRes.to);
+            assert(isHintLegal, "Recommended hint move is verified as strictly legal on initial board");
+
+            // TEST 18: Web Audio Synthesizer Hint & Button Chimes
+            assert(typeof ChessAudio.playHint === 'function', "ChessAudio.playHint is defined and accessible");
+            assert(typeof ChessAudio.playClick === 'function', "ChessAudio.playClick is defined and accessible");
+
+            // TEST 19: Realm Selection Verification
+            assert(Chess3D.REALMS.royal.name === 'Royal Kingdom', "Realm 'royal' is Royal Kingdom");
+            assert(Chess3D.REALMS.forest.name === 'Enchanted Forest', "Realm 'forest' is Enchanted Forest");
+            assert(Chess3D.REALMS.frozen.name === 'Frozen Kingdom', "Realm 'frozen' is Frozen Kingdom");
+            assert(Chess3D.REALMS.dragon.name === 'Dragon Realm', "Realm 'dragon' is Dragon Realm");
+            assert(Chess3D.REALMS.celestial.name === 'Celestial Realm', "Realm 'celestial' is Celestial Realm");
+            assert(Chess3D.REALMS.temple.name === 'Ancient Temple', "Realm 'temple' is Ancient Temple");
+
             // Output Results Summary
             resultsEl.innerHTML = `
                 <h2>TEST RESULTS: ${passed} PASSED, ${failed} FAILED</h2>

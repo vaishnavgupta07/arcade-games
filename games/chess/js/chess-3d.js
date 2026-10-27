@@ -582,20 +582,20 @@ class Chess3D {
     createPieceMaterial(color) {
         const r = this.currentRealm;
         if (color === 'w') {
-            return new THREE.MeshStandardMaterial({
+            return new THREE.MeshPhysicalMaterial({
                 color: r.pieceWhiteColor,
                 roughness: 0.22,
-                metalness: 0.3,
+                metalness: 0.25,
                 clearcoat: 0.4,
                 clearcoatRoughness: 0.2
             });
         } else {
-            return new THREE.MeshStandardMaterial({
+            return new THREE.MeshPhysicalMaterial({
                 color: r.pieceBlackColor,
-                roughness: 0.3,
-                metalness: 0.45,
-                clearcoat: 0.3,
-                clearcoatRoughness: 0.3
+                roughness: 0.28,
+                metalness: 0.35,
+                clearcoat: 0.35,
+                clearcoatRoughness: 0.25
             });
         }
     }
@@ -840,6 +840,28 @@ class Chess3D {
         // King in check highlight
         if (this.inCheckSquare && this.squareMeshes[this.inCheckSquare]) {
             this.squareMeshes[this.inCheckSquare].material.emissive.setHex(0x881111);
+        }
+
+        // Tactical Hint Highlights (Glowing Beacon)
+        if (highlights.hint) {
+            const hintFromMesh = this.squareMeshes[highlights.hint.from];
+            const hintToMesh = this.squareMeshes[highlights.hint.to];
+            if (hintFromMesh) {
+                hintFromMesh.material.emissive.setHex(0x997700); // Luminous gold beacon
+            }
+            if (hintToMesh) {
+                hintToMesh.material.emissive.setHex(0x004466); // Luminous cyan beacon
+                const hintBeaconMat = new THREE.MeshBasicMaterial({
+                    color: 0x00f0ff,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const hintRing = new THREE.Mesh(new THREE.RingGeometry(0.32, 0.46, 32), hintBeaconMat);
+                hintRing.rotation.x = -Math.PI / 2;
+                hintRing.position.set(hintToMesh.position.x, 0.08, hintToMesh.position.z);
+                this.scene.add(hintRing);
+                this.markerMeshes.push(hintRing);
+            }
         }
 
         // Draw Legal Move Markers
